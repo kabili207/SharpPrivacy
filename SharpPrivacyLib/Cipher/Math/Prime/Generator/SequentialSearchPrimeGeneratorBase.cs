@@ -1,4 +1,4 @@
-﻿//
+//
 // Mono.Math.Prime.Generator.SequentialSearchPrimeGeneratorBase.cs - Prime Generator
 //
 // Authors:
@@ -13,7 +13,6 @@
 
 using System;
 using SharpPrivacy.SharpPrivacyLib.Cipher.Math.Prime;
-using System.Windows.Forms;
 
 namespace SharpPrivacy.SharpPrivacyLib.Cipher.Math.Prime.Generator {
 	
