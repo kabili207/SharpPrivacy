@@ -1,0 +1,44 @@
+<Combine fileversion="1.0" name="SharpPrivacy" description="">
+  <StartMode startupentry="SharpPrivacyTray" single="True">
+    <Execute entry="MagicLibrary" type="None" />
+    <Execute entry="SharpPrivacyIF" type="None" />
+    <Execute entry="SharpPrivacyLib" type="None" />
+    <Execute entry="SharpPrivacySrv" type="None" />
+    <Execute entry="SharpPrivacyTest" type="None" />
+    <Execute entry="SharpPrivacyTray" type="None" />
+  </StartMode>
+  <Entries>
+    <Entry filename=".\MagicLibrary\MagicLibrary.prjx" />
+    <Entry filename=".\SharpPrivacyIF\SharpPrivacyIF.prjx" />
+    <Entry filename=".\SharpPrivacyLib\SharpPrivacyLib.prjx" />
+    <Entry filename=".\SharpPrivacySrv\SharpPrivacySrv.prjx" />
+    <Entry filename=".\SharpPrivacyTest\SharpPrivacyTest.prjx" />
+    <Entry filename=".\SharpPrivacyTray\SharpPrivacyTray.prjx" />
+  </Entries>
+  <Configurations active="Debug">
+    <Configuration name="Release">
+      <Entry name="MagicLibrary" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyIF" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyLib" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
+      <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+    </Configuration>
+    <Configuration name="StrongMagic">
+      <Entry name="MagicLibrary" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyIF" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyLib" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
+      <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+    </Configuration>
+    <Configuration name="Debug">
+      <Entry name="MagicLibrary" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyIF" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyLib" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
+      <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+    </Configuration>
+  </Configurations>
+</Combine>
