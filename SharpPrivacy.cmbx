@@ -6,6 +6,7 @@
     <Execute entry="SharpPrivacySrv" type="None" />
     <Execute entry="SharpPrivacyTest" type="None" />
     <Execute entry="SharpPrivacyTray" type="None" />
+    <Execute entry="SharpPrivacyOutlook" type="None" />
   </StartMode>
   <Entries>
     <Entry filename=".\MagicLibrary\MagicLibrary.prjx" />
@@ -14,6 +15,7 @@
     <Entry filename=".\SharpPrivacySrv\SharpPrivacySrv.prjx" />
     <Entry filename=".\SharpPrivacyTest\SharpPrivacyTest.prjx" />
     <Entry filename=".\SharpPrivacyTray\SharpPrivacyTray.prjx" />
+    <Entry filename=".\SharpPrivacyOutlook\SharpPrivacyOutlook.prjx" />
   </Entries>
   <Configurations active="Debug">
     <Configuration name="Release">
@@ -23,6 +25,7 @@
       <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
       <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
       <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyOutlook" configurationname="Debug" build="False" />
     </Configuration>
     <Configuration name="StrongMagic">
       <Entry name="MagicLibrary" configurationname="Debug" build="False" />
@@ -31,6 +34,7 @@
       <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
       <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
       <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyOutlook" configurationname="Debug" build="False" />
     </Configuration>
     <Configuration name="Debug">
       <Entry name="MagicLibrary" configurationname="Debug" build="False" />
@@ -39,6 +43,7 @@
       <Entry name="SharpPrivacySrv" configurationname="Release" build="False" />
       <Entry name="SharpPrivacyTest" configurationname="Debug" build="False" />
       <Entry name="SharpPrivacyTray" configurationname="Debug" build="False" />
+      <Entry name="SharpPrivacyOutlook" configurationname="Debug" build="False" />
     </Configuration>
   </Configurations>
 </Combine>
