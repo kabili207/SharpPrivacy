@@ -15,14 +15,16 @@
 //	Daniel Fabian (df@sharpprivacy.net)
 //
 //
-// Version: 0.1.0 (initial release)
+// Version: 0.2
 //
 // Changelog:
-//	- 01.06.2003: Added this header for the first beta release.
+//  - 01.06.2003: Added this header for the first beta release.
 //  - 14.06.2003: Changed Namespace from SharpPrivacy.OpenPGP to
 //                SharpPrivacy.SharpPrivacyLib.OpenPGP
+//  - 16.06.2004: Fixed bug in handling packets with partial body
+//                length.
 //
-// (C) 2003, Daniel Fabian
+// (C) 2003 - 2004, Daniel Fabian
 //
 using System;
 using System.Collections;
