@@ -25,7 +25,6 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
-using Crownwood.Magic.Menus;
 using System.Collections;
 using System.Reflection;
 using System.Xml;
@@ -35,41 +34,35 @@ using System.Xml.XPath;
 namespace SharpPrivacy.SharpPrivacyTray {
 	class SharpPrivacyTray : System.Windows.Forms.Form {
 		
-		private Bitmap bmpMnuClipboard;
-		private Bitmap bmpMnuCurrentWindow;
-		private Bitmap bmpMnuKeyManager;
-		private Bitmap bmpMnuFileSystem;
-		private Bitmap bmpMnuAbout;
-		
 		private NotifyIcon niTrayIcon = new NotifyIcon();
-		private PopupMenu pmnuTrayMenu = new PopupMenu();
+		private ContextMenu cmnuTrayMenu = new ContextMenu();
 		
-		private MenuCommand mnuKeyManager = new MenuCommand("Key Manager");
-		private MenuCommand mnuSeperator2 = new MenuCommand("-");
-		private MenuCommand mnuClipboard = new MenuCommand("Clipboard");
-		private MenuCommand mnuFileSystem = new MenuCommand("File System");
-		private MenuCommand mnuCurrentWindow = new MenuCommand("CurrentWindow");
-		private MenuCommand mnuSeperator1 = new MenuCommand("-");
-		private MenuCommand mnuAbout = new MenuCommand("About");
-		private MenuCommand mnuExit = new MenuCommand("Exit");
+		private MenuItem mnuKeyManager = new MenuItem("Key Manager");
+		private MenuItem mnuSeperator2 = new MenuItem("-");
+		private MenuItem mnuClipboard = new MenuItem("Clipboard");
+		private MenuItem mnuFileSystem = new MenuItem("File System");
+		private MenuItem mnuCurrentWindow = new MenuItem("CurrentWindow");
+		private MenuItem mnuSeperator1 = new MenuItem("-");
+		private MenuItem mnuAbout = new MenuItem("About");
+		private MenuItem mnuExit = new MenuItem("Exit");
 		
-		private MenuCommand mnuClipboardEmpty = new MenuCommand("Empty");
-		private MenuCommand mnuClipboardEdit = new MenuCommand("Edit");
-		private	MenuCommand mnuClipboardSeperator1 = new MenuCommand("-");
-		private	MenuCommand mnuClipboardDecryptVerify = new MenuCommand("Decrypt && Verify");
-		private	MenuCommand mnuClipboardEncryptSign = new MenuCommand("Encrypt && Sign");
-		private	MenuCommand mnuClipboardSign = new MenuCommand("Sign");
-		private	MenuCommand mnuClipboardEncrypt = new MenuCommand("Encrypt");
+		private MenuItem mnuClipboardEmpty = new MenuItem("Empty");
+		private MenuItem mnuClipboardEdit = new MenuItem("Edit");
+		private MenuItem mnuClipboardSeperator1 = new MenuItem("-");
+		private MenuItem mnuClipboardDecryptVerify = new MenuItem("Decrypt && Verify");
+		private MenuItem mnuClipboardEncryptSign = new MenuItem("Encrypt && Sign");
+		private MenuItem mnuClipboardSign = new MenuItem("Sign");
+		private MenuItem mnuClipboardEncrypt = new MenuItem("Encrypt");
 		
-		private	MenuCommand mnuFileSystemDecryptVerify = new MenuCommand("Decrypt && Verify");
-		private	MenuCommand mnuFileSystemEncryptSign = new MenuCommand("Encrypt && Sign");
-		private	MenuCommand mnuFileSystemSign = new MenuCommand("Sign");
-		private	MenuCommand mnuFileSystemEncrypt = new MenuCommand("Encrypt");
+		private MenuItem mnuFileSystemDecryptVerify = new MenuItem("Decrypt && Verify");
+		private MenuItem mnuFileSystemEncryptSign = new MenuItem("Encrypt && Sign");
+		private MenuItem mnuFileSystemSign = new MenuItem("Sign");
+		private MenuItem mnuFileSystemEncrypt = new MenuItem("Encrypt");
 		
-		private	MenuCommand mnuCurrentWindowDecryptVerify = new MenuCommand("Decrypt && Verify");
-		private	MenuCommand mnuCurrentWindowEncyrptSign = new MenuCommand("Encrypt && Sign");
-		private	MenuCommand mnuCurrentWindowSign = new MenuCommand("Sign");
-		private	MenuCommand mnuCurrentWindowEncrypt = new MenuCommand("Encrypt");
+		private MenuItem mnuCurrentWindowDecryptVerify = new MenuItem("Decrypt && Verify");
+		private MenuItem mnuCurrentWindowEncyrptSign = new MenuItem("Encrypt && Sign");
+		private MenuItem mnuCurrentWindowSign = new MenuItem("Sign");
+		private MenuItem mnuCurrentWindowEncrypt = new MenuItem("Encrypt");
 		
 		private System.Threading.Thread tThread;
 		private static Working wWorking;
@@ -132,11 +125,6 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		void InitializeCustomComponents() {
 			
 			System.Resources.ResourceManager resources = new System.Resources.ResourceManager("SharpPrivacyTray", Assembly.GetExecutingAssembly()); 
-			this.bmpMnuClipboard = ((System.Drawing.Icon)resources.GetObject("menuClipboard")).ToBitmap();
-			this.bmpMnuCurrentWindow = ((System.Drawing.Icon)resources.GetObject("menuCurrentWindow")).ToBitmap();
-			this.bmpMnuFileSystem = ((System.Drawing.Icon)resources.GetObject("menuFileSystem")).ToBitmap();
-			this.bmpMnuKeyManager = ((System.Drawing.Icon)resources.GetObject("menuKeyManager")).ToBitmap();
-			this.bmpMnuAbout = ((Icon)resources.GetObject("menuAbout")).ToBitmap();
 			
 			Icon iTrayIcon = (System.Drawing.Icon)resources.GetObject("trayIcon");
 			this.Icon = iTrayIcon;
@@ -154,56 +142,40 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			mnuFileSystemSign.Click += new EventHandler(this.mnuFileSystemSign_Click);
 			mnuFileSystemEncryptSign.Click += new EventHandler(this.mnuFileSystemEncryptSign_Click);
 			
-			mnuKeyManager.Image = bmpMnuKeyManager;
-			mnuClipboard.Image = bmpMnuClipboard;
-			mnuCurrentWindow.Image = bmpMnuCurrentWindow;
-			mnuFileSystem.Image = bmpMnuFileSystem;
-			mnuAbout.Image = bmpMnuAbout;
+			mnuFileSystem.MenuItems.Add(mnuFileSystemDecryptVerify);
+			mnuFileSystem.MenuItems.Add(mnuFileSystemEncryptSign);
+			mnuFileSystem.MenuItems.Add(mnuFileSystemSign);
+			mnuFileSystem.MenuItems.Add(mnuFileSystemEncrypt);
 			
-			mnuFileSystem.MenuCommands.Add(mnuFileSystemDecryptVerify);
-			mnuFileSystem.MenuCommands.Add(mnuFileSystemEncryptSign);
-			mnuFileSystem.MenuCommands.Add(mnuFileSystemSign);
-			mnuFileSystem.MenuCommands.Add(mnuFileSystemEncrypt);
-			
-			mnuClipboard.MenuCommands.Add(mnuClipboardEmpty);
-			mnuClipboard.MenuCommands.Add(mnuClipboardEdit);
-			mnuClipboard.MenuCommands.Add(mnuClipboardSeperator1);
-			mnuClipboard.MenuCommands.Add(mnuClipboardDecryptVerify);
-			mnuClipboard.MenuCommands.Add(mnuClipboardEncryptSign);
-			mnuClipboard.MenuCommands.Add(mnuClipboardSign);
-			mnuClipboard.MenuCommands.Add(mnuClipboardEncrypt);
-			
-			mnuClipboardDecryptVerify.Image = ((Icon)resources.GetObject("listSecretKey")).ToBitmap();
-			mnuClipboardEncrypt.Image = ((Icon)resources.GetObject("listPublicKey")).ToBitmap();
-			mnuFileSystemDecryptVerify.Image = ((Icon)resources.GetObject("listSecretKey")).ToBitmap();
-			mnuFileSystemEncrypt.Image = ((Icon)resources.GetObject("listPublicKey")).ToBitmap();
+			mnuClipboard.MenuItems.Add(mnuClipboardEmpty);
+			mnuClipboard.MenuItems.Add(mnuClipboardEdit);
+			mnuClipboard.MenuItems.Add(mnuClipboardSeperator1);
+			mnuClipboard.MenuItems.Add(mnuClipboardDecryptVerify);
+			mnuClipboard.MenuItems.Add(mnuClipboardEncryptSign);
+			mnuClipboard.MenuItems.Add(mnuClipboardSign);
+			mnuClipboard.MenuItems.Add(mnuClipboardEncrypt);
 			
 			mnuCurrentWindow.Visible = false;
-			mnuCurrentWindow.MenuCommands.Add(mnuCurrentWindowDecryptVerify);
-			mnuCurrentWindow.MenuCommands.Add(mnuCurrentWindowEncyrptSign);
-			mnuCurrentWindow.MenuCommands.Add(mnuCurrentWindowSign);
-			mnuCurrentWindow.MenuCommands.Add(mnuCurrentWindowEncrypt);
+			mnuCurrentWindow.MenuItems.Add(mnuCurrentWindowDecryptVerify);
+			mnuCurrentWindow.MenuItems.Add(mnuCurrentWindowEncyrptSign);
+			mnuCurrentWindow.MenuItems.Add(mnuCurrentWindowSign);
+			mnuCurrentWindow.MenuItems.Add(mnuCurrentWindowEncrypt);
 			
-			pmnuTrayMenu.MenuCommands.Add(mnuAbout);
-			pmnuTrayMenu.MenuCommands.Add(mnuKeyManager);
-			pmnuTrayMenu.MenuCommands.Add(mnuSeperator2);
-			pmnuTrayMenu.MenuCommands.Add(mnuCurrentWindow);
-			pmnuTrayMenu.MenuCommands.Add(mnuFileSystem);
-			pmnuTrayMenu.MenuCommands.Add(mnuClipboard);
-			pmnuTrayMenu.MenuCommands.Add(mnuSeperator1);
-			pmnuTrayMenu.MenuCommands.Add(mnuExit);
-			
-			pmnuTrayMenu.Animate = Crownwood.Magic.Menus.Animate.Yes;
-			pmnuTrayMenu.AnimateTime = 100;
-			pmnuTrayMenu.Style = Crownwood.Magic.Common.VisualStyle.IDE;
+			cmnuTrayMenu.MenuItems.Add(mnuAbout);
+			cmnuTrayMenu.MenuItems.Add(mnuKeyManager);
+			cmnuTrayMenu.MenuItems.Add(mnuSeperator2);
+			cmnuTrayMenu.MenuItems.Add(mnuCurrentWindow);
+			cmnuTrayMenu.MenuItems.Add(mnuFileSystem);
+			cmnuTrayMenu.MenuItems.Add(mnuClipboard);
+			cmnuTrayMenu.MenuItems.Add(mnuSeperator1);
+			cmnuTrayMenu.MenuItems.Add(mnuExit);
 			
 			niTrayIcon.Icon = iTrayIcon;
-			niTrayIcon.MouseUp += new MouseEventHandler(niTrayIcon_MouseUp);
+			// niTrayIcon.MouseUp += new MouseEventHandler(niTrayIcon_MouseUp);
 			niTrayIcon.Visible = true;
+			niTrayIcon.ContextMenu = cmnuTrayMenu;
 			
 			this.ShowInTaskbar = false;
-			
-			
 		}
 		
 		// This method is used in the forms designer.
@@ -233,7 +205,7 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		void mnuExit_Click(Object sender, System.EventArgs e) {
 			this.Hide();
 			niTrayIcon.Dispose();
-			pmnuTrayMenu = null;
+			cmnuTrayMenu = null;
 			this.Dispose();
 			this.Close();
 			Application.Exit();
@@ -539,15 +511,6 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			adAbout.Show();
 		}
 		
-		void niTrayIcon_MouseUp(Object sender, System.Windows.Forms.MouseEventArgs e) {
-			pmnuTrayMenu.DestroyHandle();
-			pmnuTrayMenu.Dismiss();
-			if (e.Button == MouseButtons.Right) {
-				MenuCommand mcSelected = pmnuTrayMenu.TrackPopup(Cursor.Position);
-			}
-		}
-
-			
 		[STAThread]
 		public static void Main(string[] args) {
 			Application.Run(new SharpPrivacyTray());

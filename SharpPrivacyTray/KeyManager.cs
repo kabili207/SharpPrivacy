@@ -26,7 +26,6 @@ using System;
 using System.Windows.Forms;
 using System.Collections;
 using System.Drawing;
-using Crownwood.Magic.Menus;
 using SynapticEffect.Forms;
 using System.Reflection;
 using System.Xml;
@@ -54,40 +53,40 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private ToolBarButton tbbPaste;
 		private ToolBarButton tbbDelete;
 		
-		private Crownwood.Magic.Menus.PopupMenu pmKeyMenu = new PopupMenu();
+		private ContextMenu cmKeyMenu = new ContextMenu();
 		
-		private MenuCommand mnuKeyMenuCopy = new MenuCommand("Copy");
-		private MenuCommand mnuKeyMenuPaste = new MenuCommand("Paste");
-		private MenuCommand mnuKeyMenuDelete = new MenuCommand("Delete");
-		private MenuCommand mnuKeyMenuSep1 = new MenuCommand("-");
-		private MenuCommand mnuKeyMenuAdd = new MenuCommand("Add");
-		private MenuCommand mnuKeyMenuAddID = new MenuCommand("UserID");
-		private MenuCommand mnuKeyMenuAddSignature = new MenuCommand("Signature");
-		private MenuCommand mnuKeyMenuProperties = new MenuCommand("Properties");
+		private ImageMenuItem mnuKeyMenuCopy = new ImageMenuItem("Copy");
+		private ImageMenuItem mnuKeyMenuPaste = new ImageMenuItem("Paste");
+		private ImageMenuItem mnuKeyMenuDelete = new ImageMenuItem("Delete");
+		private MenuItem mnuKeyMenuSep1 = new MenuItem("-");
+		private ImageMenuItem mnuKeyMenuAdd = new ImageMenuItem("Add");
+		private ImageMenuItem mnuKeyMenuAddID = new ImageMenuItem("UserID");
+		private ImageMenuItem mnuKeyMenuAddSignature = new ImageMenuItem("Signature");
+		private ImageMenuItem mnuKeyMenuProperties = new ImageMenuItem("Properties");
 		
 		
-		private MenuControl mnuMainMenu = new MenuControl();
+		private MainMenu mnuMainMenu = new MainMenu();
 		
-		private MenuCommand mnuFile = new MenuCommand("File");
-		private MenuCommand mnuFileOpen = new MenuCommand("Open...");
-		private MenuCommand mnuFileNew = new MenuCommand("New...");
-		private MenuCommand mnuFileSeperator1 = new MenuCommand("-");
-		private MenuCommand mnuFileExit = new MenuCommand("Exit");
+		private MenuItem mnuFile = new MenuItem("File");
+		private ImageMenuItem mnuFileOpen = new ImageMenuItem("Open...");
+		private ImageMenuItem mnuFileNew = new ImageMenuItem("New...");
+		private MenuItem mnuFileSeperator1 = new MenuItem("-");
+		private ImageMenuItem mnuFileExit = new ImageMenuItem("Exit");
 		
-		private MenuCommand mnuEdit = new MenuCommand("Edit");
-		private MenuCommand mnuEditCopy = new MenuCommand("Copy");
-		private MenuCommand mnuEditPaste = new MenuCommand("Paste");
-		private MenuCommand mnuEditDelete = new MenuCommand("Delete");
-		private MenuCommand mnuEditSeperator1 = new MenuCommand("-");
-		private MenuCommand mnuEditSelectAll = new MenuCommand("Select All");
-		private MenuCommand mnuEditCollapseSelection = new MenuCommand("Collapse Selection");
-		private MenuCommand mnuEditExpandSelection = new MenuCommand("Expand Selection");
-		private MenuCommand mnuEditSeperator2 = new MenuCommand("-");
-		private MenuCommand mnuEditOptions = new MenuCommand("Options...");
+		private MenuItem mnuEdit = new MenuItem("Edit");
+		private ImageMenuItem mnuEditCopy = new ImageMenuItem("Copy");
+		private ImageMenuItem mnuEditPaste = new ImageMenuItem("Paste");
+		private ImageMenuItem mnuEditDelete = new ImageMenuItem("Delete");
+		private MenuItem mnuEditSeperator1 = new MenuItem("-");
+		private ImageMenuItem mnuEditSelectAll = new ImageMenuItem("Select All");
+		private ImageMenuItem mnuEditCollapseSelection = new ImageMenuItem("Collapse Selection");
+		private ImageMenuItem mnuEditExpandSelection = new ImageMenuItem("Expand Selection");
+		private MenuItem mnuEditSeperator2 = new MenuItem("-");
+		private ImageMenuItem mnuEditOptions = new ImageMenuItem("Options...");
 		
-		private MenuCommand mnuKeys = new MenuCommand("Keys");
-		private MenuCommand mnuKeysNewKey = new MenuCommand("New Key...");
-		private MenuCommand mnuKeysRefresh = new MenuCommand("Refresh");
+		private MenuItem mnuKeys = new MenuItem("Keys");
+		private ImageMenuItem mnuKeysNewKey = new ImageMenuItem("New Key...");
+		private ImageMenuItem mnuKeysRefresh = new ImageMenuItem("Refresh");
 		
 		public KeyManager() {
 			InitializeComponent();
@@ -347,46 +346,44 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.Resize += new System.EventHandler(this.KeyManager_Resize);
 			
 			// Key menu (popupmenu when key is right-clicked);
-			this.mnuKeyMenuAdd.MenuCommands.Add(this.mnuKeyMenuAddID);
-			this.mnuKeyMenuAdd.MenuCommands.Add(this.mnuKeyMenuAddSignature);
+			this.mnuKeyMenuAdd.MenuItems.Add(this.mnuKeyMenuAddID);
+			this.mnuKeyMenuAdd.MenuItems.Add(this.mnuKeyMenuAddSignature);
 			
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuCopy);
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuPaste);
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuDelete);
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuSep1);
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuAdd);
-			this.pmKeyMenu.MenuCommands.Add(this.mnuKeyMenuProperties);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuCopy);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuPaste);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuDelete);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuSep1);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuAdd);
+			this.cmKeyMenu.MenuItems.Add(this.mnuKeyMenuProperties);
 			
 			
 			// Main menu
 			this.mnuFileOpen.Visible = false;
 			this.mnuFileNew.Visible = false;
 			this.mnuFileSeperator1.Visible = false;
-			this.mnuFile.MenuCommands.Add(this.mnuFileOpen);
-			this.mnuFile.MenuCommands.Add(this.mnuFileNew);
-			this.mnuFile.MenuCommands.Add(this.mnuFileSeperator1);
-			this.mnuFile.MenuCommands.Add(this.mnuFileExit);
+			this.mnuFile.MenuItems.Add(this.mnuFileOpen);
+			this.mnuFile.MenuItems.Add(this.mnuFileNew);
+			this.mnuFile.MenuItems.Add(this.mnuFileSeperator1);
+			this.mnuFile.MenuItems.Add(this.mnuFileExit);
 			
 			
 			this.mnuEditOptions.Visible = false;
-			this.mnuEdit.MenuCommands.Add(this.mnuEditCopy);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditPaste);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditDelete);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditSeperator1);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditSelectAll);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditCollapseSelection);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditExpandSelection);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditSeperator2);
-			this.mnuEdit.MenuCommands.Add(this.mnuEditOptions);
+			this.mnuEdit.MenuItems.Add(this.mnuEditCopy);
+			this.mnuEdit.MenuItems.Add(this.mnuEditPaste);
+			this.mnuEdit.MenuItems.Add(this.mnuEditDelete);
+			this.mnuEdit.MenuItems.Add(this.mnuEditSeperator1);
+			this.mnuEdit.MenuItems.Add(this.mnuEditSelectAll);
+			this.mnuEdit.MenuItems.Add(this.mnuEditCollapseSelection);
+			this.mnuEdit.MenuItems.Add(this.mnuEditExpandSelection);
+			this.mnuEdit.MenuItems.Add(this.mnuEditSeperator2);
+			this.mnuEdit.MenuItems.Add(this.mnuEditOptions);
 			
-			this.mnuKeys.MenuCommands.Add(this.mnuKeysNewKey);
-			this.mnuKeys.MenuCommands.Add(this.mnuKeysRefresh);
+			this.mnuKeys.MenuItems.Add(this.mnuKeysNewKey);
+			this.mnuKeys.MenuItems.Add(this.mnuKeysRefresh);
 			
-			this.mnuMainMenu.MenuCommands.Add(this.mnuFile);
-			this.mnuMainMenu.MenuCommands.Add(this.mnuEdit);
-			this.mnuMainMenu.MenuCommands.Add(this.mnuKeys);
-			
-			this.Controls.Add(this.mnuMainMenu);
+			this.mnuMainMenu.MenuItems.Add(this.mnuFile);
+			this.mnuMainMenu.MenuItems.Add(this.mnuEdit);
+			this.mnuMainMenu.MenuItems.Add(this.mnuKeys);
 			
 			this.tbbNewKeyPair = new ToolBarButton("New Key Pair");
 			this.tbbNewKeyPair.ImageIndex = 0;
@@ -493,12 +490,13 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.tchAlgorithm.Width = 60;
 			
 			this.tlvKeys = new TreeListView();
+			this.tlvKeys.ContextMenu = cmKeyMenu;
 			this.tlvKeys.HeaderMenu = null;
 			this.tlvKeys.ItemMenu = null;
 			this.tlvKeys.MultiSelect = true;
 			this.tlvKeys.Dock = System.Windows.Forms.DockStyle.None;
 			this.tlvKeys.Left = 0;
-			this.tlvKeys.Top = 65;
+			this.tlvKeys.Top = 45;
 			this.tlvKeys.Size = new System.Drawing.Size(this.Width, this.Height-120);
 			this.tlvKeys.Name = "tlvKeys";
 			this.tlvKeys.ShowLines = true;
@@ -513,7 +511,7 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.tlvKeys.Columns.Add(this.tchAlgorithm);
 			this.tlvKeys.SmallImageList = imglTreeListView;
 			this.Controls.Add(this.tlvKeys);
-			this.tlvKeys.MouseUp += new MouseEventHandler(this.tlvKeys_MouseUp);
+			//this.tlvKeys.MouseUp += new MouseEventHandler(this.tlvKeys_MouseUp);
 			
 			System.Resources.ResourceManager resources = new System.Resources.ResourceManager("SharpPrivacyTray", Assembly.GetExecutingAssembly()); 
 			
@@ -527,16 +525,18 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.imglTreeListView.Images.Add((Icon)resources.GetObject("listSignature"));
 			this.imglTreeListView.Images.Add((Icon)resources.GetObject("listSecretKey"));
 			
-			this.mnuEditCopy.Image = ((Icon)resources.GetObject("menuCopy")).ToBitmap();
-			this.mnuEditPaste.Image = ((Icon)resources.GetObject("menuPaste")).ToBitmap();
-			this.mnuEditDelete.Image = ((Icon)resources.GetObject("menuDelete")).ToBitmap();
+			this.mnuEditCopy.Icon = ((Icon)resources.GetObject("menuCopy"));
+			this.mnuEditPaste.Icon = ((Icon)resources.GetObject("menuPaste"));
+			this.mnuEditDelete.Icon = ((Icon)resources.GetObject("menuDelete"));
 			
-			this.mnuKeyMenuAddSignature.Image = ((Icon)resources.GetObject("listSignature")).ToBitmap();
-			this.mnuKeyMenuCopy.Image = ((Icon)resources.GetObject("menuCopy")).ToBitmap();
-			this.mnuKeyMenuPaste.Image = ((Icon)resources.GetObject("menuPaste")).ToBitmap();
-			this.mnuKeyMenuDelete.Image = ((Icon)resources.GetObject("menuDelete")).ToBitmap();
+			this.mnuKeyMenuAddSignature.Icon = ((Icon)resources.GetObject("listSignature"));
+			this.mnuKeyMenuCopy.Icon = ((Icon)resources.GetObject("menuCopy"));
+			this.mnuKeyMenuPaste.Icon = ((Icon)resources.GetObject("menuPaste"));
+			this.mnuKeyMenuDelete.Icon = ((Icon)resources.GetObject("menuDelete"));
 			
-			this.mnuKeysNewKey.Image = ((Icon)resources.GetObject("menuKeyPair")).ToBitmap();
+			this.mnuKeysNewKey.Icon = ((Icon)resources.GetObject("menuKeyPair"));
+			
+			this.Menu = mnuMainMenu;
 			
 			this.Icon = (Icon)resources.GetObject("menuKeyManager");
 			
@@ -826,17 +826,18 @@ namespace SharpPrivacy.SharpPrivacyTray {
 					break;
 			}
 		}
-
+		
+/*		
 		void tlvKeys_MouseUp(Object sender, System.Windows.Forms.MouseEventArgs e) {
 			try {
-				pmKeyMenu.DestroyHandle();
-				pmKeyMenu.Dismiss();
+				cmKeyMenu.DestroyHandle();
+				cmKeyMenu.Dismiss();
 				if ((e.Button == MouseButtons.Right) && (tlvKeys.SelectedNodes.Count == 1)) {
-					this.pmKeyMenu.TrackPopup(Cursor.Position);
+					this.cmKeyMenu.TrackPopup(Cursor.Position);
 				}
 			} catch (Exception) {}
 		}
-		
+*/		
 		
 	}
 }
