@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -185,7 +185,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 				AsymSessionKeyPacket askpKey = (AsymSessionKeyPacket)ieSessionkeys.Current;
 				ulong lKeyID = askpKey.KeyID;
 				
-				TransportableSecretKey tskKey = skrKeyRing.Find(lKeyID, strPassphrase);
+				TransportableSecretKey tskKey = skrKeyRing.Find(lKeyID);
 				if (tskKey != null) {
 					bFound = true;
 					tskSecretKey = tskKey;

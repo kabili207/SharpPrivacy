@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -24,9 +24,9 @@
 // (C) 2003, Daniel Fabian
 //
 using System;
-using System.Windows.Forms;
 using System.Collections;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
+using SharpPrivacy.SharpPrivacyLib.Cipher.Math;
 
 namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 	
@@ -46,6 +46,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 
 		private DateTime dtTimeCreated;
 		private ulong lKeyID;
+		private BigInteger revocationkeyID;
 		private DateTime dtKeyExpirationTime;
 		private SymAlgorithms[] saPreferedSymAlgos;
 		private HashAlgorithms[] haPreferedHashAlgorithms;
@@ -54,11 +55,80 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		private bool bExportableSignature;
 		private bool bRevocable;
 		private bool bPrimaryUserID;
+		private int bSensible = 0;
 		private byte bTrustLevel;
 		private byte bTrustAmount;
 		private string strPreferedKeyServer;
+		private string strReasonForRevocation;
+		private byte bReasonForRevocationCode;
+		private string strNotationName;
+		private string strNotationValue;
+		private HashAlgorithms fingerprintHash;
 		private KeyFlagTypes[] kftKeyFlags;
 		private KeyserverPreferencesTypes[] kptKeyserverPreferences;
+		
+		public int Sensible {
+			get {
+				return bSensible;
+			}
+			set {
+				bSensible  = value;
+			}
+		}
+
+		public HashAlgorithms FingerprintHash {
+			get {
+				return fingerprintHash;
+			}
+			set {
+				fingerprintHash  = value;
+			}
+		}
+
+		public string NotationValue {
+			get {
+				return strNotationValue;
+			}
+			set {
+				strNotationValue  = value;
+			}
+		}
+		
+		public string NotationName {
+			get {
+				return strNotationName;
+			}
+			set {
+				strNotationName  = value;
+			}
+		}
+		
+		public byte ReasonForRevocationCode {
+			get {
+				return bReasonForRevocationCode;
+			}
+			set {
+				bReasonForRevocationCode  = value;
+			}
+		}
+		
+		public string ReasonForRevocation {
+			get {
+				return strReasonForRevocation;
+			}
+			set {
+				strReasonForRevocation  = value;
+			}
+		}
+
+		public BigInteger RevocationKeyID {
+			get {
+				return revocationkeyID;
+			}
+			set {
+				revocationkeyID  = value;
+			}
+		}
 		
 		public SignatureSubPacketTypes Type {
 			get {
@@ -334,6 +404,18 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					strReturn += "Primary UserID: " + bPrimaryUserID.ToString();
 					strReturn += "\r\n";
 					break;
+				case SignatureSubPacketTypes.RevocationKey:
+					strReturn += "Revoker Key Fingerprint: " + RevocationKeyID.ToString();
+					strReturn += "\r\n";
+					break;
+				case SignatureSubPacketTypes.ReasonForRevocation:
+					strReturn += "Reason For Revocation: " + ReasonForRevocationCode + "  " + ReasonForRevocation;
+					strReturn += "\r\n";
+					break;
+				case SignatureSubPacketTypes.NotationData:
+					strReturn += "Notation: " + NotationName + "   Value:" + NotationValue;
+					strReturn += "\r\n";
+					break;
 				
 				default: // Everything else
 					strReturn += "This subpacket is not yet implemented!\r\n";
@@ -485,7 +567,45 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 				case SignatureSubPacketTypes.PrimaryUserID:
 					bPrimaryUserID = (bBody[0] == 1);
 					break;
-					
+				case SignatureSubPacketTypes.RevocationKey:
+					this.Sensible = (bBody[1] >> 3) & 0x01;
+					this.FingerprintHash = (HashAlgorithms)bBody[1];
+					byte[] fingerprint = new byte[bBody.Length-2];
+					for(int i = 2; i < bBody.Length; i++)
+						fingerprint[i-2] = bBody[i];
+
+					this.RevocationKeyID = new BigInteger(fingerprint);
+					break;
+				case SignatureSubPacketTypes.ReasonForRevocation:
+					byte[] reason = new byte[bBody.Length-1];
+					for(int i = 1; i < bBody.Length; i++)
+						reason[i-1] = bBody[i];
+
+					this.ReasonForRevocationCode = bBody[0];
+					char [] reasArray = new char[reason.Length];
+					Array.Copy(reason,reasArray,reason.Length);
+					this.ReasonForRevocation = new string(reasArray);
+					break;
+				case SignatureSubPacketTypes.NotationData:
+					int nameLength = bBody[4] << 8;
+					nameLength ^= bBody[5];
+					int valueLength = bBody[6] << 8;
+					valueLength ^= bBody[7];
+					byte[] name = new byte[nameLength];
+					byte[] val = new byte[valueLength];
+					for(int i = 8; i < nameLength + 8; i++)
+						name[i-8] = bBody[i];
+
+					for(int i = nameLength + 8; i < valueLength + nameLength + 8; i++)
+						val[i-nameLength-8] = bBody[i];
+
+					char [] notnamArray = new char[nameLength];
+					Array.Copy(name,notnamArray,name.Length);
+					this.NotationName = new string(notnamArray);
+					char [] notvalArray = new char[valueLength];
+					Array.Copy(val,notvalArray,val.Length);
+					this.NotationValue = new string(notvalArray);
+					break;					
 						
 					
 			}
@@ -614,7 +734,37 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					if (bPrimaryUserID)
 						bReturn[0] = 1;	
 					break;
+				case SignatureSubPacketTypes.RevocationKey:
+					byte[] fingerprint = this.RevocationKeyID.getBytes();
+					bReturn = new byte[2 + fingerprint.Length];
+					Array.Copy(fingerprint,0,bReturn,2,fingerprint.Length);
+					bReturn[0] = (byte)(((1 & 0x80) | (this.Sensible << 3)) & 0xFF);
+					bReturn[1] = (byte)this.FingerprintHash;
+					break;
+				case SignatureSubPacketTypes.ReasonForRevocation:
+					char[] reason = this.ReasonForRevocation.ToCharArray();
+					bReturn = new byte[reason.Length+1];
+					for (int i=0; i<reason.Length; i++) 
+						bReturn[i+1] = (byte)reason[i];
 
+					bReturn[0] = this.ReasonForRevocationCode;
+					break;
+				case SignatureSubPacketTypes.NotationData:
+					char[] name = this.NotationName.ToCharArray();
+					char[] nValue = this.NotationValue.ToCharArray();
+					bReturn = new byte[name.Length+nValue.Length+8];
+					for (int i=0; i<name.Length; i++) 
+						bReturn[i+8] = (byte)name[i];
+
+					for (int i=0; i<nValue.Length; i++) 
+						bReturn[i+8+name.Length] = (byte)nValue[i];
+
+					bReturn[0] = (byte) 1 & 0x80;
+					bReturn[4] = (byte)((name.Length >> 8) & 0xFF);
+					bReturn[5] = (byte)(name.Length & 0xFF);
+					bReturn[6] = (byte)((nValue.Length >> 8) & 0xFF);
+					bReturn[7] = (byte)(nValue.Length & 0xFF);
+					break;
 			}
 			
 			return bReturn;

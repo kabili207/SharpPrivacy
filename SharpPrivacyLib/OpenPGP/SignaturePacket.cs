@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -24,7 +24,7 @@
 // (C) 2003, Daniel Fabian
 //
 using System;
-using System.Windows.Forms;
+using System.Collections;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
 using SharpPrivacy.SharpPrivacyLib.Cipher.Math;
 
@@ -102,7 +102,9 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 			get {
 				return ssSignatureStatus;
 			}
-		}
+			set {
+				this.ssSignatureStatus = value;
+			}		}
 		
 		/// <summary>
 		/// Gets or sets an array of signature subpackets. The content of
@@ -839,6 +841,100 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 				return 0;
 			}
 			return lKeyID;
+		}
+		
+		public ArrayList FindRevokerKeys() {
+				ArrayList list = new ArrayList();
+				for (int i=0; i<this.HashedSubPackets.Length; i++) {
+					if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.RevocationKey)
+						list.Add(this.HashedSubPackets[i].RevocationKeyID);
+				}
+				for (int i=0; i<this.UnhashedSubPackets.Length; i++) {
+					if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.RevocationKey)
+						list.Add(this.UnhashedSubPackets[i].RevocationKeyID);
+				}
+				return list;
+		}
+
+		public bool isRevocable() {
+			for (int i=0; i<this.HashedSubPackets.Length; i++) {
+				if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.Revocable) {
+					return this.HashedSubPackets[i].Revocable;
+				}
+			}
+			for (int i=0; i<this.UnhashedSubPackets.Length; i++) {
+				if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.Revocable)
+					return this.UnhashedSubPackets[i].Revocable;
+			}
+			
+			return true;
+		}
+
+		public byte FindReasonForRevocationCode() {
+			if(this.SignatureType == SignatureTypes.CertificationRevocationSignature ||
+				this.SignatureType == SignatureTypes.KeyRevocationSignature ||
+				this.SignatureType == SignatureTypes.SubkeyRevocationSignature)
+			{
+				byte code = 0x00;
+				for (int i=0; i<this.HashedSubPackets.Length; i++) {
+					if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.ReasonForRevocation) {
+						code=this.HashedSubPackets[i].ReasonForRevocationCode;
+						return code;
+					}
+				}
+				for (int i=0; i<this.UnhashedSubPackets.Length; i++) {
+					if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.ReasonForRevocation) {
+						code=this.UnhashedSubPackets[i].ReasonForRevocationCode;
+						return code;
+					}
+				}
+				return code;
+			}
+			return 0x00;
+		}
+
+		public string[] FindNotationNames() {
+			int number = 0;
+			for (int i=0; i<this.HashedSubPackets.Length; i++) 
+				if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData)
+					number++;
+
+			for (int i=0; i<this.UnhashedSubPackets.Length; i++)
+				if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData)
+					number++;
+
+			string[] name = new string[number];
+			number=0;
+			for (int i=0; i<this.HashedSubPackets.Length; i++)
+				if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData)
+					name[number++]=this.HashedSubPackets[i].NotationName;
+
+			for (int i=0; i<this.UnhashedSubPackets.Length; i++) 
+				if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData)
+					name[number++]=this.UnhashedSubPackets[i].NotationName;
+			
+			return name;
+		}
+
+		public string FindNotationValue(string name) {
+			string nvalue = null;
+			for (int i=0; i<this.HashedSubPackets.Length; i++) {
+				if (this.HashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData) {
+					if(this.HashedSubPackets[i].NotationName == name) {
+						nvalue=this.HashedSubPackets[i].NotationValue;
+						return nvalue;
+					}
+				}
+			}
+			for (int i=0; i<this.UnhashedSubPackets.Length; i++) {
+				if (this.UnhashedSubPackets[i].Type == SignatureSubPacketTypes.NotationData) {
+					if (this.UnhashedSubPackets[i].NotationName == name) {
+						nvalue=this.UnhashedSubPackets[i].NotationValue;
+						return nvalue;
+					}
+				}
+			}
+			return nvalue;
 		}
 		
 		private DateTime FindSignatureCreationTime() {

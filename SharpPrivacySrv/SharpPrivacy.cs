@@ -55,7 +55,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 		public void EncryptFile(string strPath, string strOutput, ulong[] lTargetKeyIDs) {
 			TransportablePublicKey[] tpkSelectedKeys = new TransportablePublicKey[lTargetKeyIDs.Length];
 			for (int i=0; i<lTargetKeyIDs.Length; i++) 
-				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i]);
+				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i], true);
 			
 			System.IO.FileStream fsFile = new FileStream(strPath, FileMode.Open);
 			BinaryReader brReader = new BinaryReader(fsFile);
@@ -99,7 +99,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 		public void EncryptAndSignFile(string strPath, string strOutput, ulong[] lTargetKeyIDs, ulong lSignatureKeyID, string strPassphrase) {
 			TransportablePublicKey[] tpkSelectedKeys = new TransportablePublicKey[lTargetKeyIDs.Length];
 			for (int i=0; i<lTargetKeyIDs.Length; i++) 
-				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i]);
+				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i], true);
 			
 			System.IO.FileStream fsFile = new FileStream(strPath, FileMode.Open);
 			BinaryReader brReader = new BinaryReader(fsFile);
@@ -249,7 +249,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 			}
 			
 			return strReturn;
-			         
+			
 		}
 		
 		public void RemovePublicKey(ulong lKeyID) {
@@ -280,7 +280,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 								bNotImported = true;
 								continue;
 							}
-							skrKeyRing.Add(tskKey);
+							skrKeyRing.AddSecretKey(tskKey);
 						}
 					} catch (Exception) {
 						bError = true;
@@ -290,12 +290,12 @@ namespace SharpPrivacy.SharpPrivacySrv {
 						TransportablePublicKey[] tpkKeys = TransportablePublicKey.SplitKeys(strKey);
 						for (int i=0; i<tpkKeys.Length; i++) {
 							TransportablePublicKey tpkKey = tpkKeys[i];
-							TransportablePublicKey tpkTestKey = pkrKeyRing.Find(tpkKey.PrimaryKey.KeyID);
+							TransportablePublicKey tpkTestKey = pkrKeyRing.Find(tpkKey.PrimaryKey.KeyID, true);
 							if (tpkTestKey != null) {
 								bNotImported = true;
 								continue;
 							}
-							pkrKeyRing.Add(tpkKey);
+							pkrKeyRing.AddPublicKey(tpkKey);
 						}
 					} catch (Exception) {
 						bError = true;
@@ -331,7 +331,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 		}
 		
 		public string GetPublicKeyProperties(ulong lKeyID) {
-			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID, false);
 			
 			XmlDocument xmlDoc = new XmlDocument();
 			
@@ -389,7 +389,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 					
 					string strCreator = "";
 					try {
-						TransportablePublicKey tpkSignatureKey = pkrKeyRing.Find(spSignature.KeyID);
+						TransportablePublicKey tpkSignatureKey = pkrKeyRing.Find(spSignature.KeyID, false);
 						strCreator = tpkSignatureKey.PrimaryUserID;
 					} catch (Exception) {
 						strCreator = "0x" + spSignature.KeyID.ToString("x");
@@ -518,7 +518,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 		}
 		
 		public string GetPublicKey(ulong lKeyID) {
-			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID, true);
 			byte[] bKey = tpkKey.Generate();
 			return Armor.WrapPublicKey(bKey);
 		}
@@ -545,7 +545,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 		
 		public void AddUserID(ulong lKeyID, string strName, string strEmail, string strPassphrase) {
 			TransportableSecretKey tskKey = skrKeyRing.Find(lKeyID);
-			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID, false);
 			
 			CertifiedUserID cuiUID = new CertifiedUserID();
 			UserIDPacket uipUID = new UserIDPacket();
@@ -569,7 +569,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 			TransportableSecretKey tskKey = skrKeyRing.Find(lSigningKeyID);
 			SecretKeyPacket skpSignatureKey = tskKey.FindKey(AsymActions.Sign);
 			
-			TransportablePublicKey tpkKey = pkrKeyRing.Find(lSignedKeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lSignedKeyID, false);
 			
 			SignaturePacket spCertificate = new SignaturePacket();
 			spCertificate.SignatureType = (SignatureTypes)nType;
@@ -612,7 +612,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 			tpkKey.Certifications.Add(cuiID);
 			
 			pkrKeyRing.Delete(lSignedKeyID);
-			pkrKeyRing.Add(tpkKey);
+			pkrKeyRing.AddPublicKey(tpkKey);
 			pkrKeyRing.Save();
 		}
 		
@@ -686,7 +686,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 				
 				CertifiedPublicSubkey cpsEncryptionKey = new CertifiedPublicSubkey();
 				cpsEncryptionKey.Subkey = pkpEncryptionKey;
-				cpsEncryptionKey.SignKeyBindingSignature(pkpSignatureKey, skpSignatureKey, strPassphrase);
+				cpsEncryptionKey.SignKeyBindingSignature(pkpSignatureKey, skpSignatureKey, strPassphrase, new DateTime(lExpiration), true);
 				
 				TransportablePublicKey tpkPublicKey = new TransportablePublicKey();
 				tpkPublicKey.PrimaryKey = pkpSignatureKey;
@@ -698,8 +698,8 @@ namespace SharpPrivacy.SharpPrivacySrv {
 				tskSecretKey.SubKeys.Add(skpEncryptionKey);
 				tskSecretKey.UserIDs.Add(uipUID);
 				
-				this.pkrKeyRing.Add(tpkPublicKey);
-				this.skrKeyRing.Add(tskSecretKey);
+				this.pkrKeyRing.AddPublicKey(tpkPublicKey);
+				this.skrKeyRing.AddSecretKey(tskSecretKey);
 				pkrKeyRing.Save();
 				skrKeyRing.Save();
 				
@@ -811,7 +811,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 			
 			TransportablePublicKey[] tpkSelectedKeys = new TransportablePublicKey[lTargetKeyIDs.Length];
 			for (int i=0; i<lTargetKeyIDs.Length; i++)
-				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i]);
+				tpkSelectedKeys[i] = pkrKeyRing.Find(lTargetKeyIDs[i], true);
 			
 			SymAlgorithms saAlgo = GetSymAlgorithmPreferences(tpkSelectedKeys);
 			

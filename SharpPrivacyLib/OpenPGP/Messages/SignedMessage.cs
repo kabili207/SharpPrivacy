@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -210,7 +210,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		/// <param name="pkrKeyRing">The public keyring containing
 		/// all keys known to the local system.</param>
 		public SignatureStatusTypes Verify(PublicKeyRing pkrKeyRing) {
-			TransportablePublicKey tpkKey = pkrKeyRing.Find(spSignature.KeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(spSignature.KeyID, true);
 			
 			if (tpkKey == null)
 				return SignatureStatusTypes.Signing_Key_Not_Available;

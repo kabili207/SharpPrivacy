@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -32,7 +32,6 @@
  */
 
 using System;
-using System.Windows.Forms;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
 using System.Collections;
 
@@ -383,7 +382,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			
 			byte[] bOneKey = new byte[0];
 			for (int i=0; i<pPackets.Length; i++) {
-				if (pPackets[i] is PublicKeyPacket) {
+				if (pPackets[i] is SecretKeyPacket) {
 					SecretKeyPacket skpKey = (SecretKeyPacket)pPackets[i];
 					if ((skpKey.Content == ContentTypes.SecretKey) && (bOneKey.Length > 10)) {
 						TransportableSecretKey tskKey = new TransportableSecretKey(Radix64.Encode(bOneKey, true));

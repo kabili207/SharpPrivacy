@@ -9,22 +9,23 @@
 // TransportablePublicKey.cs: 
 // 	Class for handling public keys in their transportable format.
 //
-// Author:
+// Author(s):
 //	Daniel Fabian (df@sharpprivacy.net)
+//  Roberto Rossi
 //
 //
-// Version: 0.1.0 (initial release)
+// Version: 0.2.0
 //
 // Changelog:
 //	- 23.02.2003: Created this file.
 //	- 01.06.2003: Added this header for the first beta release.
 //  - 14.06.2003: Changed Namespace from SharpPrivacy.OpenPGP.Messages to
 //                SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages
+//  - 28.02.2004: Several bugfixes by Roberto Rossi
 //
-// (C) 2003, Daniel Fabian
+// (C) 2003 - 2004, Daniel Fabian, Roberto Rossi
 //
 using System;
-using System.Windows.Forms;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
 using System.Collections;
 
@@ -43,6 +44,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 	public class TransportablePublicKey {
 		private PublicKeyPacket pkpPrimaryKey;
 		private ArrayList alRevocationSignatures;
+		private ArrayList alRevocationKeys;
 		private ArrayList alCertifications;
 		private ArrayList alSubkeys;
 		private string strPrimaryUserID;
@@ -58,6 +60,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		public TransportablePublicKey(string strBase64) {
 			alRevocationSignatures = new ArrayList();
 			alCertifications = new ArrayList();
+			alRevocationKeys = new ArrayList();
 			alSubkeys = new ArrayList();
 			strPrimaryUserID = "";
 			this.Parse(strBase64);
@@ -71,6 +74,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		public TransportablePublicKey() {
 			alRevocationSignatures = new ArrayList();
 			alCertifications = new ArrayList();
+			alRevocationKeys = new ArrayList();
 			alSubkeys = new ArrayList();
 			strPrimaryUserID = "";
 		}
@@ -90,6 +94,16 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 					strPrimaryUserID = FindPrimaryUserID();
 				
 				return strPrimaryUserID;
+			}
+		}
+		
+		public CertifiedUserID PrimaryUserIDCert {
+			get {
+				foreach(CertifiedUserID cuid in this.Certifications) {
+					if(cuid.UserID.UserID==this.PrimaryUserID)
+						return cuid;
+				}
+				throw new Exception("Primary UID certificate not found");
 			}
 		}
 		
@@ -128,6 +142,15 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			}
 			set {
 				alRevocationSignatures = value;
+			}
+		}
+		
+		public ArrayList RevocationKeys {
+			get {
+				return alRevocationKeys;
+			}
+			set {
+				alRevocationKeys = value;
 			}
 		}
 		
@@ -222,7 +245,26 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 					iPosition += bRev.Length;
 				}
 			}
+
+			// Revoker keys
+			iLength = 0;
+			IEnumerator ieRevoker = this.RevocationKeys.GetEnumerator();
+			while (ieRevoker.MoveNext()) {
+				if (ieRevoker.Current is SignaturePacket) 
+					iLength += ((SignaturePacket)ieRevoker.Current).Generate().Length;
+			}
 			
+			byte[] bRevoker = new byte[iLength];
+			ieRevoker = this.RevocationKeys.GetEnumerator();
+			iPosition = 0;
+			while (ieRevoker.MoveNext()) {
+				if (ieRevoker.Current is SignaturePacket) {
+					byte[] bRev = ((SignaturePacket)ieRevoker.Current).Generate();
+					Array.Copy(bRev, 0, bRevoker, iPosition, bRev.Length);
+					iPosition += bRev.Length;
+				}
+			}
+						
 			//Certificates
 			iLength = 0;
 			IEnumerator ieCertificates = this.Certifications.GetEnumerator();
@@ -265,13 +307,15 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 				}
 			}
 			
-			byte[] bData = new byte[bPrimaryKey.Length + bRevocations.Length +
-									bCertificates.Length + bSubkeys.Length];
+			byte[] bData = new byte[bPrimaryKey.Length + bRevocations.Length + 
+									bRevoker.Length + bCertificates.Length + bSubkeys.Length];
 			iPosition = 0;
 			Array.Copy(bPrimaryKey, bData, bPrimaryKey.Length);
 			iPosition = bPrimaryKey.Length;
 			Array.Copy(bRevocations, 0, bData, iPosition, bRevocations.Length);
 			iPosition += bRevocations.Length;
+			Array.Copy(bRevoker, 0, bData, iPosition, bRevoker.Length);
+			iPosition += bRevoker.Length;
 			Array.Copy(bCertificates, 0, bData, iPosition, bCertificates.Length);
 			iPosition += bCertificates.Length;
 			Array.Copy(bSubkeys, 0, bData, iPosition, bSubkeys.Length);
@@ -440,18 +484,20 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			
 			try {
 				// First we expect a PublicKeyPacket
-				if (!(pPackets[0] is PublicKeyPacket)) {
-					throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
-				}
+				if (!(pPackets[0] is PublicKeyPacket))
+					throw(new ArgumentException("The given packet is not in the required transportable public key format (packet 0 should have been public key packet)!"));
+				
 				this.PrimaryKey = (PublicKeyPacket)pPackets[nCurrentPacket++];
 				
 				// Next we expect zero or more revocation signatures
 				while ((nCurrentPacket < pPackets.Length) && (pPackets[nCurrentPacket] is SignaturePacket)) {
 					SignaturePacket spRevocation = (SignaturePacket)pPackets[nCurrentPacket++];
-					if (spRevocation.SignatureType != SignatureTypes.KeyRevocationSignature) {
-						throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
-					}
-					this.RevocationSignatures.Add(spRevocation);
+					if (spRevocation.SignatureType == SignatureTypes.KeyRevocationSignature) {
+						this.RevocationSignatures.Add(spRevocation);
+					} else if(spRevocation.SignatureType == SignatureTypes.KeySignature) {
+						this.RevocationKeys.Add(spRevocation);
+					} else
+						throw(new ArgumentException("The given packet is not in the required transportable public key format (expected zero or more revocation signatures, was: " + spRevocation.SignatureType + ")!"));
 				}
 				
 				// Next in queue must be one or more UserID Packets
@@ -467,8 +513,9 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 						if ((spCertificate.SignatureType != SignatureTypes.UserIDSignature) &&
 						    (spCertificate.SignatureType != SignatureTypes.UserIDSignature_CasualVerification) &&
 						    (spCertificate.SignatureType != SignatureTypes.UserIDSignature_NoVerification) &&
-						    (spCertificate.SignatureType != SignatureTypes.UserIDSignature_PositivVerification)) {
-							throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
+						    (spCertificate.SignatureType != SignatureTypes.UserIDSignature_PositivVerification) &&
+							(spCertificate.SignatureType != SignatureTypes.CertificationRevocationSignature)) {
+							throw(new ArgumentException("The given packet is not in the required transportable public key format (expected zero or more Signatures/Certificates)!"));
 						}
 						cuiUserID.Certificates.Add(spCertificate);
 					}
@@ -477,7 +524,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 				
 				// There was no UserIDPacket. This is fatal!!!
 				if (nUserIDCounter == 0) {
-					throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
+					throw(new ArgumentException("The given packet is not in the required transportable public key format (there was no UserIDPacket)!"));
 				}
 				
 				// Finally we have zero or more subkeys
@@ -486,30 +533,35 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 					CertifiedPublicSubkey cpsSubKey = new CertifiedPublicSubkey();
 					cpsSubKey.Subkey = pkpSubKey;
 					
-					if ((nCurrentPacket < pPackets.Length) && (pPackets[nCurrentPacket] is SignaturePacket)) {
+					while ((nCurrentPacket < pPackets.Length) && (pPackets[nCurrentPacket] is SignaturePacket)) {
 						SignaturePacket spKeySignature = (SignaturePacket)pPackets[nCurrentPacket++];
 						if (spKeySignature.SignatureType == SignatureTypes.SubkeyBindingSignature) {
 							cpsSubKey.KeyBindingSignature = spKeySignature;
 						} else if (spKeySignature.SignatureType == SignatureTypes.SubkeyRevocationSignature) {
 							cpsSubKey.RevocationSignature = spKeySignature;
 						}
-					} else {
-						throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
+					} 
+					if (nCurrentPacket < pPackets.Length) {
+						if (!(pPackets[nCurrentPacket] is PublicKeyPacket)) {
+							throw(new ArgumentException("The given packet is not in the required transportable public key format (expected public subkey packet)!"));
+						}
 					}
+					/*
 					if (nCurrentPacket < pPackets.Length) {
 						if (pPackets[nCurrentPacket] is SignaturePacket) {
 							SignaturePacket spSubkeyRev = (SignaturePacket)pPackets[nCurrentPacket++];
 							cpsSubKey.RevocationSignature = spSubkeyRev;
 						}
 					}
+					*/
 					this.SubKeys.Add(cpsSubKey);
 				}
 			} catch (System.IndexOutOfRangeException) {
 				if (nUserIDCounter == 0) {
-					throw(new ArgumentException("The given packet is not in the required transportable public key format!"));
+					throw(new ArgumentException("The given packet is not in the required transportable public key format (no userid packet found)!"));
 				}
 			}
-		}
+		}	
 		
 		private DateTime FindExpirationDate() {
 			IEnumerator ieCertificates = this.alCertifications.GetEnumerator();

@@ -24,7 +24,6 @@
 // (C) 2003, Daniel Fabian
 //
 using System;
-using System.Windows.Forms;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
 using System.Collections;
 
@@ -103,7 +102,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			
 		}
 		
-		/// <summary>
+	/// <summary>
 		/// Generates the certified public subkey out of the properties
 		/// in this.
 		/// </summary>
@@ -112,17 +111,21 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		/// <remarks>No remarks</remarks>
 		public byte[] Generate() {
 			byte[] bSubKey = this.Subkey.Generate();
-			byte[] bKeyBindingSignature = this.KeyBindingSignature.Generate();
+			byte[] bKeyBindingSignature = new byte[0];
 			byte[] bRevocationSignature = new byte[0];
+
+			if (this.KeyBindingSignature != null) 
+				bKeyBindingSignature = this.KeyBindingSignature.Generate();
 			
-			if (this.RevocationSignature != null) {
+			if (this.RevocationSignature != null) 
 				bRevocationSignature = this.RevocationSignature.Generate();
-			}
 			
-			byte[] bData = new byte[bSubKey.Length + bKeyBindingSignature.Length + bRevocationSignature.Length];
+			byte[] bData = new byte[bSubKey.Length + bKeyBindingSignature.Length + bRevocationSignature.Length * 3];
 			Array.Copy(bSubKey, bData, bSubKey.Length);
 			Array.Copy(bKeyBindingSignature, 0, bData, bSubKey.Length, bKeyBindingSignature.Length);
 			Array.Copy(bRevocationSignature, 0, bData, bSubKey.Length + bKeyBindingSignature.Length, bRevocationSignature.Length);
+			Array.Copy(bRevocationSignature, 0, bData, bSubKey.Length + bKeyBindingSignature.Length + bRevocationSignature.Length, bRevocationSignature.Length);
+			Array.Copy(bRevocationSignature, 0, bData, bSubKey.Length + bKeyBindingSignature.Length + 2*bRevocationSignature.Length, bRevocationSignature.Length);
 			
 			return bData;
 		}
@@ -142,14 +145,14 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 				Array.Copy(pkpPrimaryKey.Body, 0, bPrimaryKey, 3, pkpPrimaryKey.Body.Length);
 				
 				byte[] bData = new byte[bPrimaryKey.Length + bSubKey.Length];
-				Array.Copy(bSubKey, 0, bData, 0, bSubKey.Length);
-				Array.Copy(bPrimaryKey, 0, bData, bSubKey.Length, bPrimaryKey.Length);
+				Array.Copy(bPrimaryKey, 0, bData, 0, bPrimaryKey.Length);
+				Array.Copy(bSubKey, 0, bData, bPrimaryKey.Length, bSubKey.Length);
 				
 				this.KeyBindingSignature.Verify(bData, pkpPrimaryKey);
 			}
-		}
-		
-		public void SignKeyBindingSignature(PublicKeyPacket pkpPrimaryKey, SecretKeyPacket skpPrimaryKey, string strPassphrase) {
+		}		
+
+		public void SignKeyBindingSignature(PublicKeyPacket pkpPrimaryKey, SecretKeyPacket skpPrimaryKey, string strPassphrase, DateTime expirationTime, bool revocable) {
 			byte[] bSubKey = new byte[pkpSubkey.Body.Length + 3];
 			bSubKey[0] = 0x99;
 			bSubKey[1] = (byte)((pkpSubkey.Body.Length >> 8) & 0xFF);
@@ -171,11 +174,21 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			spKeyBindingSig.HashAlgorithm = HashAlgorithms.SHA1;
 			spKeyBindingSig.KeyID = pkpPrimaryKey.KeyID;
 			spKeyBindingSig.SignatureType = SignatureTypes.SubkeyBindingSignature;
-			
+			if(expirationTime.Ticks != 0) {
+				SignatureSubPacket sspExpiration = new SignatureSubPacket();
+				sspExpiration.Type = SignatureSubPacketTypes.KeyExpirationTime;
+				sspExpiration.KeyExpirationTime = new DateTime(expirationTime.Ticks + (new DateTime(1970,1,2)).Ticks - pkpPrimaryKey.TimeCreated.Ticks);
+				spKeyBindingSig.AddSubPacket(sspExpiration, true);
+			}
+			if(!revocable) {
+				SignatureSubPacket sspRevocable = new SignatureSubPacket();
+				sspRevocable.Type = SignatureSubPacketTypes.Revocable;
+				sspRevocable.Revocable = revocable;
+				spKeyBindingSig.AddSubPacket(sspRevocable, true);
+			}
 			spKeyBindingSig.Sign(bData, skpPrimaryKey, strPassphrase);
 			this.KeyBindingSignature = spKeyBindingSig;
-		}
-		
+		}		
 		
 	}
 }

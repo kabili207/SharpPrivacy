@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -24,7 +24,6 @@
 // (C) 2003, Daniel Fabian
 //
 using System;
-using System.Windows.Forms;
 using SharpPrivacy.SharpPrivacyLib.Cipher;
 using System.Collections;
 
@@ -82,6 +81,13 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		
 		private UserIDPacket uipUserID;
 		private ArrayList alCertificates;
+		private ValidityStatus validitystatus;
+
+		public ValidityStatus CertificationValidityStatus {
+			get {
+				return this.validitystatus;
+			}
+		}
 		
 		/// <summary>
 		/// Creates a new CertifiedUserID
@@ -89,6 +95,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		/// <remarks>No remarks</remarks>
 		public CertifiedUserID() {
 			alCertificates = new ArrayList();
+			this.validitystatus =  ValidityStatus.NotYetValidated;
 		}
 		
 		/// <summary>
@@ -137,12 +144,14 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 		/// </param>
 		public void Validate(PublicKeyPacket pkpKey, PublicKeyRing pkrRing) {
 			IEnumerator ieCertificates = Certificates.GetEnumerator();
+			this.validitystatus = ValidityStatus.Valid;
 			while (ieCertificates.MoveNext()) {
 				if (ieCertificates.Current is SignaturePacket) {
 					SignaturePacket spCert = (SignaturePacket)ieCertificates.Current;
 					
-					TransportablePublicKey tkpSigningKey = pkrRing.Find(spCert.KeyID);
+					TransportablePublicKey tkpSigningKey = pkrRing.Find(spCert.KeyID, true);
 					if (tkpSigningKey == null) {
+						this.validitystatus = ValidityStatus.ValidationKeyUnavailable;
 						continue;
 					}
 					PublicKeyPacket pkpSigningKey = tkpSigningKey.PrimaryKey;
@@ -167,14 +176,23 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 						Array.Copy(bUserID, 0, bData, bKey.Length, bUserID.Length);
 						
 						spCert.Verify(bData, pkpSigningKey);
+						if(spCert.SignatureStatus == SignatureStatusTypes.Invalid) {
+							this.validitystatus = ValidityStatus.Invalid;
+							continue;
+						} else if(spCert.SignatureStatus == SignatureStatusTypes.Signing_Key_Not_Available) {
+							this.validitystatus = ValidityStatus.ValidationKeyUnavailable;
+							continue;
+						} else if(spCert.SignatureStatus == SignatureStatusTypes.Not_Verified) {
+							this.validitystatus = ValidityStatus.NotYetValidated;
+							continue;
+						}
 					} else {
 						//TODO: Add code for v3 Signature verification
 						
 					}
 				}
 			}
-		}
-		
+		}		
 		/// <summary>
 		/// Creates a new Certification for the UserID.
 		/// </summary>
@@ -209,6 +227,34 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 				Array.Copy(bUserID, 0, bData, bKey.Length, bUserID.Length);
 				
 				spSignature.SignatureType = SignatureTypes.UserIDSignature;
+				spSignature.Sign(bData, skpKey, strPassphrase);
+				this.alCertificates.Add(spSignature);
+			} else {
+				throw new System.NotImplementedException("Only v4 signatures are supported so far!");
+			}
+		}
+
+		public void Revoke(SignaturePacket spSignature, SecretKeyPacket skpKey, string strPassphrase, PublicKeyPacket pkpKey) {
+			if (spSignature.Version == SignaturePacketVersionNumbers.v4) {
+				byte[] bKey = new byte[pkpKey.Body.Length + 3];
+				bKey[0] = 0x99;
+				bKey[1] = (byte)((pkpKey.Body.Length >> 8) & 0xFF);
+				bKey[2] = (byte)(pkpKey.Body.Length & 0xFF);
+				Array.Copy(pkpKey.Body, 0, bKey, 3, pkpKey.Body.Length);
+				
+				byte[] bUserID = new byte[UserID.Body.Length + 5];
+				bUserID[0] = 0xb4;
+				bUserID[1] = (byte)((UserID.Body.Length >> 24) & 0xFF);
+				bUserID[2] = (byte)((UserID.Body.Length >> 16) & 0xFF);
+				bUserID[3] = (byte)((UserID.Body.Length >> 8) & 0xFF);
+				bUserID[4] = (byte)(UserID.Body.Length & 0xFF);
+				Array.Copy(UserID.Body, 0, bUserID, 5, UserID.Body.Length);
+				
+				byte[] bData = new byte[bUserID.Length + bKey.Length];
+				Array.Copy(bKey, 0, bData, 0, bKey.Length);
+				Array.Copy(bUserID, 0, bData, bKey.Length, bUserID.Length);
+				
+				spSignature.SignatureType = SignatureTypes.CertificationRevocationSignature;
 				spSignature.Sign(bData, skpKey, strPassphrase);
 				this.alCertificates.Add(spSignature);
 			} else {

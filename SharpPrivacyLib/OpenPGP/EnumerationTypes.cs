@@ -159,7 +159,9 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		/// 
 		/// Armor to protect signatures
 		/// </summary>
-		OpenPGPSignature = 3
+		OpenPGPSignature = 3,
+
+		OpenPGPSignedMessage = 4
 	}
 	
 	/// <summary>

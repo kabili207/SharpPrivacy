@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -24,7 +24,6 @@
 // (C) 2003, Daniel Fabian
 //
 using System;
-using System.Windows.Forms;
 
 namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 	
@@ -89,6 +88,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		public static string RemoveArmor(string strMessage, ref ArmorTypes atType, ref string strRest) {
 			string[] strLines = strMessage.Split('\n');
 			string strReturn = "";
+			bool foundSignedMessage = false;
 			
 			/* Codes for Positions:
 			 *  0: Not in an OpenPGP Message
@@ -142,7 +142,14 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 							break;
 						
 						case "-----BEGIN PGP SIGNATURE-----":
-							atType = ArmorTypes.OpenPGPSignature;
+							if (!foundSignedMessage)
+								atType = ArmorTypes.OpenPGPSignature;
+							break;
+
+						case "-----BEGIN PGP SIGNED MESSAGE-----":
+							atType = ArmorTypes.OpenPGPSignedMessage;
+							iPosition = 0;
+							foundSignedMessage = true;
 							break;
 						
 						default:
@@ -163,7 +170,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		/// <returns>Returns the armored secret key.</returns>
 		public static string WrapPrivateKey(string strKey) {
 			string strReturn = "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-			strReturn += "Version: " + Application.ProductName + " " + Application.ProductVersion + "\r\n\r\n";
+			strReturn += "Version: " + SharpPrivacyLibrary.ApplicationVersionInfos + "\r\n\r\n";
 			strReturn += strKey;
 			strReturn += "-----END PGP PRIVATE KEY BLOCK-----\r\n\r\n";
 			
@@ -186,7 +193,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		/// <returns>Returns the armored public key.</returns>
 		public static string WrapPublicKey(string strKey) {
 			string strReturn = "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-			strReturn += "Version: " + Application.ProductName + " " + Application.ProductVersion + "\r\n\r\n";
+			strReturn += "Version: " + SharpPrivacyLibrary.ApplicationVersionInfos + "\r\n\r\n";
 			strReturn += strKey;
 			strReturn += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
 			
@@ -209,7 +216,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 		/// <returns>Returns the armored OpenPGP message.</returns>
 		public static string WrapMessage(string strMessage) {
 			string strReturn = "-----BEGIN PGP MESSAGE-----\r\n";
-			strReturn += "Version: " + Application.ProductName + " " + Application.ProductVersion + "\r\n\r\n";
+			strReturn += "Version: " + SharpPrivacyLibrary.ApplicationVersionInfos + "\r\n\r\n";
 			strReturn += strMessage;
 			strReturn += "-----END PGP MESSAGE-----\r\n";
 			
@@ -238,7 +245,22 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 			strFinal += "Hash: SHA1\r\n\r\n";
 			strFinal += Radix64.DashEscape(strMessage);
 			strFinal += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-			strFinal += "Version: " + Application.ProductName + " " + Application.ProductVersion + "\r\n\r\n";
+			strFinal += "Version: " + SharpPrivacyLibrary.ApplicationVersionInfos + "\r\n\r\n";
+			strFinal += strSignature;
+			strFinal += "-----END PGP SIGNATURE-----\r\n";	
+			
+			return strFinal;
+		}
+
+		/// <summary>
+		/// Armors an OpenPGP Cleartextsignature.
+		/// </summary>
+		/// <param name="strSignature">The OpenPGP signature of the given 
+		/// message formated in Radix64.</param>
+		/// <returns>The armored OpenPGP cleartext signature.</returns>
+		public static string WrapCleartextSignature(string strSignature) {
+			string strFinal = "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
+			strFinal += "Version: " + SharpPrivacyLibrary.ApplicationVersionInfos + "\r\n\r\n";
 			strFinal += strSignature;
 			strFinal += "-----END PGP SIGNATURE-----\r\n";	
 			

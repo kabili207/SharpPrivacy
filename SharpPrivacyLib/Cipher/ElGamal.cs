@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -26,7 +26,6 @@
 //
 using System;
 using System.Security.Cryptography;
-using System.Windows.Forms;
 using SharpPrivacy.SharpPrivacyLib.OpenPGP;
 using SharpPrivacy.SharpPrivacyLib.Cipher.Math;
 

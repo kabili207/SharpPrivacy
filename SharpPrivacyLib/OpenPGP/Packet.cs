@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -315,13 +315,14 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 			
 			
 			if (pfFormat == PacketFormats.New) {
-				int iBinaryDataPos = 2;
+				int iBinaryDataPos = 1;
 				ctContent = (ContentTypes)(bBinaryData[0] & 0x3F);
 				lLength = bBinaryData[1];
 				bBody = new byte[0];
 				int iHeaderLength = 1;
 				//partial body lengths
 				while ((lLength > 223) && (lLength < 255)) {
+					iBinaryDataPos += 1;
 					iHeaderLength++;
 					int lPartialBody = 1 << ((int)(lLength & 0x1F));
 					int lOldLength = 0;
@@ -334,7 +335,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					} else {
 						bBody = new byte[lPartialBody];
 					}
-					Array.Copy(bBinaryData, iBinaryDataPos, bBody, lOldLength, lPartialBody);
+					Array.Copy(bBinaryData, iBinaryDataPos, bBody, bBody.Length - lPartialBody, lPartialBody);
 					lLength = bBinaryData[iBinaryDataPos + lPartialBody];
 					iBinaryDataPos += lPartialBody;
 				} //partial bodies must end with a normal header!
@@ -368,6 +369,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					bHeader = new byte[iHeaderLength];
 					if (bBody.Length == 0) {
 						Array.Copy(bBinaryData, 0, bHeader, 0, 6);
+						iBinaryDataPos = 1;
 					}
 					lLength = (bBinaryData[iBinaryDataPos++] << 24) ^ (bBinaryData[iBinaryDataPos++] << 16) ^
 							  (bBinaryData[iBinaryDataPos++] << 8) ^ bBinaryData[iBinaryDataPos++];
@@ -459,8 +461,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					break;
 				case ContentTypes.Trust:
 					pReturnPacket = new Packet(this);
-					// TODO - Remove the messagebox
-					//System.Windows.Forms.MessageBox.Show("This is a Trust Packet. It is not yet supported");
+					//throw new Exception("This is a Trust Packet. It is not yet supported");
 					break;
 				case ContentTypes.UserID:
 					pReturnPacket = new UserIDPacket(this);
@@ -468,8 +469,7 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP {
 					break;
 				default:
 					pReturnPacket = new Packet(this);
-					// TODO - Remove the messagebox
-					//System.Windows.Forms.MessageBox.Show("Sorry, but this is a packet I don't know about!");
+					//throw new Exception("Sorry, but this is a packet I don't know about!");
 					break;
 			}
 			
