@@ -1,4 +1,4 @@
-﻿// created on 14.06.2003 at 19:05
+// created on 14.06.2003 at 19:05
 using System;
 using System.Xml;
 using System.IO;
@@ -543,6 +543,79 @@ namespace SharpPrivacy.SharpPrivacySrv {
 			return dDSA.Generate(1024);
 		}
 		
+		public void AddUserID(ulong lKeyID, string strName, string strEmail, string strPassphrase) {
+			TransportableSecretKey tskKey = skrKeyRing.Find(lKeyID);
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lKeyID);
+			
+			CertifiedUserID cuiUID = new CertifiedUserID();
+			UserIDPacket uipUID = new UserIDPacket();
+			uipUID.UserID = strName.Trim() + " <" + strEmail.Trim() + ">";
+			cuiUID.UserID = uipUID;
+			
+			SecretKeyPacket skpSignatureKey = tskKey.FindKey(AsymActions.Sign);
+			SignaturePacket spSelfSig = new SignaturePacket();
+			spSelfSig.Version = SignaturePacketVersionNumbers.v4;
+			spSelfSig.HashAlgorithm = HashAlgorithms.SHA1;
+			spSelfSig.KeyID = skpSignatureKey.PublicKey.KeyID;
+			spSelfSig.TimeCreated = DateTime.Now;
+			cuiUID.Certificates = new System.Collections.ArrayList();
+			cuiUID.Sign(spSelfSig, skpSignatureKey, strPassphrase, tpkKey.PrimaryKey);
+			
+			tpkKey.Certifications.Add(cuiUID);
+			tskKey.UserIDs.Add(uipUID);
+		}
+		
+		public void SignKey(ulong lSignedKeyID, ulong lSigningKeyID, string strUserID, int nIntroducerDepth, bool bIsExportable, int nType, string strPassphrase) {
+			TransportableSecretKey tskKey = skrKeyRing.Find(lSigningKeyID);
+			SecretKeyPacket skpSignatureKey = tskKey.FindKey(AsymActions.Sign);
+			
+			TransportablePublicKey tpkKey = pkrKeyRing.Find(lSignedKeyID);
+			
+			SignaturePacket spCertificate = new SignaturePacket();
+			spCertificate.SignatureType = (SignatureTypes)nType;
+			spCertificate.Version = SignaturePacketVersionNumbers.v4;
+			spCertificate.HashAlgorithm = HashAlgorithms.SHA1;
+			spCertificate.KeyID = skpSignatureKey.PublicKey.KeyID;
+			spCertificate.TimeCreated = DateTime.Now;
+			
+			CertifiedUserID cuiID = null;
+			IEnumerator ieUserIDs = tpkKey.Certifications.GetEnumerator();
+			while (ieUserIDs.MoveNext()) {
+				if (!(ieUserIDs.Current is CertifiedUserID))
+					continue;
+				
+				CertifiedUserID cuiThisID = (CertifiedUserID)ieUserIDs.Current;
+				if (cuiThisID.ToString() == strUserID) {
+					cuiID = cuiThisID;
+				}
+			}
+			if (cuiID == null)
+				throw new Exception("UserID could not be found!");
+			
+			if (bIsExportable == false) {
+				SignatureSubPacket sspNotExportable = new SignatureSubPacket();
+				sspNotExportable.Type = SignatureSubPacketTypes.ExportableSignature;
+				sspNotExportable.ExportableSignature = false;
+				spCertificate.AddSubPacket(sspNotExportable, true);
+			}
+			
+			if (nIntroducerDepth > 0) {
+				SignatureSubPacket sspTrust = new SignatureSubPacket();
+				sspTrust.Type = SignatureSubPacketTypes.TrustSignature;
+				sspTrust.TrustLevel = (byte)nIntroducerDepth;
+				sspTrust.TrustAmount = 120;
+				spCertificate.AddSubPacket(sspTrust, true);
+			}
+			
+			cuiID.Sign(spCertificate, skpSignatureKey, strPassphrase, tpkKey.PrimaryKey);
+			tpkKey.Certifications.Remove(cuiID);
+			tpkKey.Certifications.Add(cuiID);
+			
+			pkrKeyRing.Delete(lSignedKeyID);
+			pkrKeyRing.Add(tpkKey);
+			pkrKeyRing.Save();
+		}
+		
 		public void GenerateKey(string strName, string strEmail, string strKeyType, int iKeySize, long lExpiration, string strPassphrase) {
 			if (strKeyType == "ElGamal/DSA") {
 				System.Security.Cryptography.RandomNumberGenerator rngRand = System.Security.Cryptography.RandomNumberGenerator.Create();
@@ -553,13 +626,13 @@ namespace SharpPrivacy.SharpPrivacySrv {
 				// now the signature key
 				BigInteger[][] biSignatureKey = GenerateSignatureKey();
 				
-				PublicKeyPacket pkpSignatureKey = new PublicKeyPacket(true);
+				PublicKeyPacket pkpSignatureKey = new PublicKeyPacket(false);
 				pkpSignatureKey.Algorithm = AsymAlgorithms.DSA;
 				pkpSignatureKey.KeyMaterial = biSignatureKey[0];
 				pkpSignatureKey.TimeCreated = DateTime.Now;
 				pkpSignatureKey.Version = PublicKeyPacketVersionNumbers.v4;
 				
-				SecretKeyPacket skpSignatureKey = new SecretKeyPacket(true);
+				SecretKeyPacket skpSignatureKey = new SecretKeyPacket(false);
 				skpSignatureKey.SymmetricalAlgorithm = SymAlgorithms.AES256;
 				skpSignatureKey.PublicKey = pkpSignatureKey;
 				skpSignatureKey.InitialVector = new byte[CipherHelper.CipherBlockSize(SymAlgorithms.AES256)];
@@ -567,7 +640,7 @@ namespace SharpPrivacy.SharpPrivacySrv {
 				skpSignatureKey.EncryptKeyMaterial(biSignatureKey[1], strPassphrase);
 				skpSignatureKey.PublicKey = pkpSignatureKey;
 				
-				PublicKeyPacket pkpEncryptionKey = new PublicKeyPacket();
+				PublicKeyPacket pkpEncryptionKey = new PublicKeyPacket(true);
 				pkpEncryptionKey.Algorithm = AsymAlgorithms.ElGamal_Encrypt_Only;
 				pkpEncryptionKey.KeyMaterial = biEncryptionKey[0];
 				pkpEncryptionKey.TimeCreated = DateTime.Now;

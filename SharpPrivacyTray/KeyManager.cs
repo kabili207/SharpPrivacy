@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -71,7 +71,6 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private MenuCommand mnuFile = new MenuCommand("File");
 		private MenuCommand mnuFileOpen = new MenuCommand("Open...");
 		private MenuCommand mnuFileNew = new MenuCommand("New...");
-		private MenuCommand mnuFileSave = new MenuCommand("Save");
 		private MenuCommand mnuFileSeperator1 = new MenuCommand("-");
 		private MenuCommand mnuFileExit = new MenuCommand("Exit");
 		
@@ -342,13 +341,10 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.mnuEditDelete.Click += new EventHandler(this.mnuEditDelete_Click);
 			this.mnuEditPaste.Click += new EventHandler(this.mnuEditPaste_Click);
 			this.mnuEditSelectAll.Click += new EventHandler(this.mnuEditSelectAll_Click);
-			this.mnuFileSave.Click += new EventHandler(this.mnuFileSave_Click);
 			this.mnuKeysRefresh.Click += new EventHandler(this.mnuKeysRefresh_Click);
 			this.mnuKeyMenuProperties.Click += new EventHandler(this.mnuKeyMenuProperties_Click);
 			this.tlbToolbar.ButtonClick += new ToolBarButtonClickEventHandler(this.tlbToolbar_Click);
 			this.Resize += new System.EventHandler(this.KeyManager_Resize);
-			
-			this.Closing += new System.ComponentModel.CancelEventHandler(this.KeyManager_Closing);
 			
 			// Key menu (popupmenu when key is right-clicked);
 			this.mnuKeyMenuAdd.MenuCommands.Add(this.mnuKeyMenuAddID);
@@ -368,7 +364,6 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.mnuFileSeperator1.Visible = false;
 			this.mnuFile.MenuCommands.Add(this.mnuFileOpen);
 			this.mnuFile.MenuCommands.Add(this.mnuFileNew);
-			this.mnuFile.MenuCommands.Add(this.mnuFileSave);
 			this.mnuFile.MenuCommands.Add(this.mnuFileSeperator1);
 			this.mnuFile.MenuCommands.Add(this.mnuFileExit);
 			
@@ -646,23 +641,6 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.tlvKeys.Height = this.Height - 120;
 		}
 		
-		void KeyManager_Closing(Object sender, System.ComponentModel.CancelEventArgs e) {
-			/*
-			if ((this.skrKeyRing.IsUpdated) || (this.pkrKeyRing.IsUpdated)) {
-				DialogResult drResult = MessageBox.Show("Your local public or private keyring has been changed. Do you want to save the changes?", "Save Data...", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
-				if (drResult == DialogResult.Yes) {
-					skrKeyRing.Save();
-					pkrKeyRing.Save();
-				} else if (drResult == DialogResult.Cancel) {
-					e.Cancel = true;
-				} else if (drResult == DialogResult.No) {
-					skrKeyRing.Reload();
-					pkrKeyRing.Reload();
-				}
-			}
-			*/
-		}
-		
 		void mnuKeyMenuCopy_Click(Object sender, System.EventArgs e) {
 			IEnumerator ieItem = tlvKeys.SelectedNodes.GetEnumerator();
 			
@@ -735,56 +713,50 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		}
 		
 		void mnuKeyMenuAddSignature_Click(Object sender, System.EventArgs e) {
-			/*
 			if (this.tlvKeys.SelectedNodes.Count == 1) {
-				if (this.tlvKeys.SelectedNodes[0].Tag is TransportablePublicKey) {
-					TransportablePublicKey tpkKey = (TransportablePublicKey)this.tlvKeys.SelectedNodes[0].Tag;
-					SignKey skSign = new SignKey(tpkKey, this.skrKeyRing);
+				XmlElement xmlKey = (XmlElement)this.tlvKeys.SelectedNodes[0].Tag;
+				if (xmlKey.Name == "PublicKey") {
+					SignKey skSign = new SignKey(xmlKey);
 					skSign.ShowDialog();
 					if (!skSign.IsCanceled) {
-						pkrKeyRing.Delete((TransportablePublicKey)this.tlvKeys.SelectedNodes[0].Tag);
-						this.tlvKeys.Nodes.Remove(this.tlvKeys.SelectedNodes[0]);
-						pkrKeyRing.Add(skSign.SignedKey);
-						this.AddKey(skSign.SignedKey);
+						SharpPrivacy.ReloadKeyRing();
+						this.LoadKeys();
 						this.stbStatus.Text = "Key signed";
 					}
-				} else if (this.tlvKeys.SelectedNodes[0].Tag is TransportableSecretKey) {
+				} else if (xmlKey.Name == "SecretKey") {
 					MessageBox.Show("You cannot sign a secret key.", "Error...", MessageBoxButtons.OK, MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1);
 				}
 			}
-			tlvKeys.Refresh();
-			*/
 		}
 		
 		void mnuKeyMenuAddID_Click(Object sender, System.EventArgs e) {
-			/*
 			if (this.tlvKeys.SelectedNodes.Count == 1) {
-				if (this.tlvKeys.SelectedNodes[0].Tag is TransportablePublicKey) {
-					TransportablePublicKey tpkKey = (TransportablePublicKey)this.tlvKeys.SelectedNodes[0].Tag;
-					TransportableSecretKey tskFittingKey = skrKeyRing.Find(tpkKey.PrimaryKey.KeyID);
-					if (tskFittingKey == null) {
-						MessageBox.Show("You cannot add a userID to this key as you do not own the fitting secret key!", "Error...", MessageBoxButtons.OK, MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1);
+				XmlElement xmlKey = (XmlElement)this.tlvKeys.SelectedNodes[0].Tag;
+				if (xmlKey.Name == "PublicKey") {
+					ulong lKeyID = UInt64.Parse(xmlKey.GetAttribute("keyid").Substring(2), System.Globalization.NumberStyles.HexNumber);
+					XmlElement xmlSecretKey = null;
+					try {
+						string strSecretKey = SharpPrivacy.Instance.GetSecretKeyProperties(lKeyID);
+						XmlDocument xmlDoc = new XmlDocument();
+						xmlDoc.LoadXml(strSecretKey);
+						xmlSecretKey = xmlDoc.DocumentElement;
+					} catch (Exception) {
+						MessageBox.Show("You cannot add a UserID to this key as you do not own the fitting secret key!", "Error...", MessageBoxButtons.OK, MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1);
 						return;
 					}
-					AddUserID auiUserID = new AddUserID(tpkKey, tskFittingKey);
+					
+					AddUserID auiUserID = new AddUserID(xmlKey, xmlSecretKey);
 					auiUserID.ShowDialog();
 					if (!auiUserID.IsCanceled) {
-						pkrKeyRing.Delete(tpkKey);
-						this.tlvKeys.Nodes.Remove(this.tlvKeys.SelectedNodes[0]);
-						pkrKeyRing.Add(auiUserID.PublicKeyWithUserID);
-						this.AddKey(auiUserID.PublicKeyWithUserID);
-						skrKeyRing.Delete(tskFittingKey);
-						RemoveNode(tskFittingKey);
-						skrKeyRing.Add(auiUserID.SecretKeyWithUserID);
-						this.AddKey(auiUserID.SecretKeyWithUserID);
+						SharpPrivacy.ReloadKeyRing();
+						this.LoadKeys();
 						this.stbStatus.Text = "UserID added";
 					}
-				} else if (this.tlvKeys.SelectedNodes[0].Tag is TransportableSecretKey) {
+				} else if (xmlKey.Name == "SecretKey") {
 					MessageBox.Show("You cannot add a user id to a secret key.", "Error...", MessageBoxButtons.OK, MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1);
 				}
 			}
 			tlvKeys.Refresh();
-			*/
 		}
 		
 		void mnuEditCopy_Click(Object sender, System.EventArgs e) {
@@ -809,55 +781,26 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.stbStatus.Text = "All keys selected";
 		}
 		
-		void mnuFileSave_Click(Object sender, System.EventArgs e) {
-			/*
-			if (skrKeyRing.IsUpdated)
-				skrKeyRing.Save();
-			
-			if (pkrKeyRing.IsUpdated)
-				pkrKeyRing.Save();
-			
-			this.stbStatus.Text = "Keyring saved!";
-			*/
-		}
-
 		void mnuKeysRefresh_Click(Object sender, System.EventArgs e) {
 			this.LoadKeys();
 			this.stbStatus.Text = "Keys refreshed";
 		}
 
 		void mnuKeyMenuProperties_Click(Object sender, System.EventArgs e) {
-			/*
 			if (this.tlvKeys.SelectedNodes.Count == 1) {
-				TransportablePublicKey tpkKey = new TransportablePublicKey();
-				if (this.tlvKeys.SelectedNodes[0].Tag is TransportablePublicKey) {
-					 tpkKey = (TransportablePublicKey)this.tlvKeys.SelectedNodes[0].Tag;
-				} else if (this.tlvKeys.SelectedNodes[0].Tag is TransportableSecretKey) {
-					TransportableSecretKey tskKey = (TransportableSecretKey)this.tlvKeys.SelectedNodes[0].Tag;
-					tpkKey = pkrKeyRing.Find(tskKey.PrimaryKey.PublicKey.KeyID);
-				} else {
-					MessageBox.Show("You did not click on a key!");
+				XmlElement xmlKey = (XmlElement)this.tlvKeys.SelectedNodes[0].Tag;
+				if (xmlKey.Name == "SecretKey") {
+					string strKeyID = xmlKey.GetAttribute("keyid");
+					ulong lKeyID = UInt64.Parse(strKeyID.Substring(2), System.Globalization.NumberStyles.HexNumber);
+					string strSecretKey = SharpPrivacy.Instance.GetPublicKeyProperties(lKeyID);
+					XmlDocument xmlDoc = new XmlDocument();
+					xmlDoc.LoadXml(strSecretKey);
+					xmlKey = xmlDoc.DocumentElement;
 				}
-				KeyProperties tpProperties = new KeyProperties(tpkKey);
+				
+				KeyProperties tpProperties = new KeyProperties(xmlKey);
 				tpProperties.ShowDialog();
 			}
-			*/
-		}
-		
-		private bool RemoveNode(XmlElement xmlKey) {
-			/*
-			IEnumerator ieTreeListKeys = this.tlvKeys.Nodes.GetEnumerator();
-			while (ieTreeListKeys.MoveNext()) {
-				TreeListNode tlnNode = (TreeListNode)ieTreeListKeys.Current;
-				if (tlnNode.Tag is TransportablePublicKey) {
-					if (tpkKey.Equals(tlnNode.Tag)) {
-						tlvKeys.Nodes.Remove(tlnNode);
-						return true;
-					}
-				}
-			}
-			*/
-			return false;
 		}
 		
 		void tlbToolbar_Click(Object sender, ToolBarButtonClickEventArgs e) {

@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -19,6 +19,7 @@
 //	- 25.05.2003: Created this file.
 //	- 01.06.2003: Added this header for the first beta release.
 //  - 14.06.2003: Changed Namespace to SharpPrivacy.SharpPrivacyTray
+//  - 14.10.2003: Changes to make this dialog work with the new architecture
 //
 // (C) 2003, Daniel Fabian
 //
@@ -27,6 +28,7 @@ using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace SharpPrivacy.SharpPrivacyTray {
 	/// <summary>
@@ -41,6 +43,8 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private System.Windows.Forms.Button cmdAdd;
 		
 		private bool bIsCanceled = true;
+		private XmlElement xmlPublicKey;
+		private XmlElement xmlSecretKey;
 		
 		public bool IsCanceled {
 			get {
@@ -52,6 +56,13 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			//
 			// Required for Windows Form Designer support
 			//
+			InitializeComponent();
+		}
+		
+		public AddUserID(XmlElement xmlPublicKey, XmlElement xmlSecretKey) {
+			this.xmlPublicKey = xmlPublicKey;
+			this.xmlSecretKey = xmlSecretKey;
+			
 			InitializeComponent();
 		}
 
@@ -158,26 +169,18 @@ namespace SharpPrivacy.SharpPrivacyTray {
 				return;
 			}
 			
-			CertifiedUserID cuiUID = new CertifiedUserID();
-			UserIDPacket uipUID = new UserIDPacket();
-			uipUID.UserID = this.txtName.Text.Trim() + " <" + this.txtEmail.Text.Trim() + ">";
-			cuiUID.UserID = uipUID;
-			
 			QueryPassphrase qpPassphrase = new QueryPassphrase();
-			qpPassphrase.ShowMyDialog(tskKey);
+			qpPassphrase.ShowSingleKeyDialog(xmlSecretKey);
 			string strPassphrase = qpPassphrase.Passphrase;
+			string strKeyID = xmlPublicKey.GetAttribute("keyid");
+			ulong lKeyID = UInt64.Parse(strKeyID.Substring(2), System.Globalization.NumberStyles.HexNumber);
 			
-			SecretKeyPacket skpSignatureKey = tskKey.FindKey(AsymActions.Sign);
-			SignaturePacket spSelfSig = new SignaturePacket();
-			spSelfSig.Version = SignaturePacketVersionNumbers.v4;
-			spSelfSig.HashAlgorithm = HashAlgorithms.SHA1;
-			spSelfSig.KeyID = skpSignatureKey.PublicKey.KeyID;
-			spSelfSig.TimeCreated = DateTime.Now;
-			cuiUID.Certificates = new System.Collections.ArrayList();
-			cuiUID.Sign(spSelfSig, skpSignatureKey, strPassphrase, this.tpkKey.PrimaryKey);
-			
-			tpkKey.Certifications.Add(cuiUID);
-			tskKey.UserIDs.Add(uipUID);
+			try {
+				SharpPrivacy.Instance.AddUserID(lKeyID, txtName.Text, txtEmail.Text, strPassphrase);
+			} catch (Exception ex) {
+				MessageBox.Show("Something went wrong while trying to add a new UserID: " + ex.Message, "Error...", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1);
+				return;
+			}
 			
 			bIsCanceled = false;
 			this.Close();

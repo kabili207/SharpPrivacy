@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -27,6 +27,7 @@ using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace SharpPrivacy.SharpPrivacyTray {
 	/// <summary>
@@ -57,54 +58,63 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private System.Windows.Forms.ColumnHeader chUserID;
 		private System.Windows.Forms.ColumnHeader chSignatures;
 		
-		private TransportablePublicKey tpkKey;
+		private XmlElement xmlKey;
 
-		public KeyProperties(TransportablePublicKey tpkKey) {
-			this.tpkKey = tpkKey;
+		public KeyProperties(XmlElement xmlKey) {
+			this.xmlKey = xmlKey;
 			InitializeComponent();
 			PopulateComponents();
 		}
 		
 		private void PopulateComponents() {
-			IEnumerator ieSubkeys = tpkKey.SubKeys.GetEnumerator();
+			this.txtKeyID.Text = xmlKey.GetAttribute("keyid");
+			this.txtFingerprint.Text = xmlKey.GetAttribute("fingerprint");
+			string strTimeCreated = xmlKey.GetAttribute("created");
+			DateTime dtTimeCreated = new DateTime(Int64.Parse(strTimeCreated));
+			this.txtTimeCreated.Text = dtTimeCreated.ToString();
+			string strExpiration = xmlKey.GetAttribute("expiration");
+			if (strExpiration != "never") {
+				DateTime dtExpiration = new DateTime(Int64.Parse(strExpiration));
+				strExpiration = dtExpiration.ToString();
+			}
+			this.txtExpiration.Text = strExpiration;
+			
+			string strSize = xmlKey.GetAttribute("size");
+			this.txtType.Text = xmlKey.GetAttribute("algorithm");
+			this.txtAlgorithm.Text = xmlKey.GetAttribute("algorithm");
+			
+			XmlNodeList xnlSubkeys = xmlKey.GetElementsByTagName("Subkey");
+			IEnumerator ieSubkeys = xnlSubkeys.GetEnumerator();
 			while (ieSubkeys.MoveNext()) {
-				if (!(ieSubkeys.Current is CertifiedPublicSubkey))
-					continue;
+				XmlElement xmlSubkey = (XmlElement)ieSubkeys.Current;
 				
-				CertifiedPublicSubkey cpsSubkey = (CertifiedPublicSubkey)ieSubkeys.Current;
-				System.Windows.Forms.ListViewItem lviItem = new ListViewItem(cpsSubkey.Subkey.Algorithm.ToString());
-				lviItem.SubItems.Add(cpsSubkey.Subkey.KeyMaterial[0].bitCount() + " Bit");
-				lviItem.SubItems.Add(cpsSubkey.Subkey.Fingerprint.ToString(16));
+				System.Windows.Forms.ListViewItem lviItem = new ListViewItem(xmlSubkey.GetAttribute("algorithm"));
+				lviItem.SubItems.Add(xmlSubkey.GetAttribute("size") + " Bit");
+				lviItem.SubItems.Add(xmlSubkey.GetAttribute("fingerprint"));
 				lvSubkeys.Items.Add(lviItem);
 			}
 			
-			IEnumerator ieUserIDs = tpkKey.Certifications.GetEnumerator();
+			// Add UserIDs
+			XmlNodeList xnlUserIDs = xmlKey.GetElementsByTagName("UserID");
+			IEnumerator ieUserIDs = xnlUserIDs.GetEnumerator();
 			while (ieUserIDs.MoveNext()) {
-				if (!(ieUserIDs.Current is CertifiedUserID))
-					continue;
+				XmlElement xmlUserID = (XmlElement)ieUserIDs.Current;
 				
-				CertifiedUserID cuiUserID = (CertifiedUserID)ieUserIDs.Current;
-				ListViewItem lviItem = new ListViewItem(cuiUserID.UserID.UserID);
-				lviItem.SubItems.Add(cuiUserID.Certificates.Count.ToString());
+				string strName = xmlUserID.GetAttribute("name");
+				string strCreated = xmlUserID.GetAttribute("created");
+				string strPrimary = xmlUserID.GetAttribute("primary");
+
+				DateTime dtCreated = new DateTime(Int64.Parse(strCreated));
+				strCreated = dtCreated.ToString();
+
+				XmlNodeList xnlSignatures = xmlUserID.GetElementsByTagName("Signature");
+
+				ListViewItem lviItem = new ListViewItem(strName);
+				lviItem.SubItems.Add(xnlSignatures.Count.ToString());
 				this.lvUserIDs.Items.Add(lviItem);
 			}
-			this.txtFingerprint.Text = tpkKey.PrimaryKey.Fingerprint.ToString(16);
-			this.txtType.Text = tpkKey.PrimaryKey.Algorithm.ToString();
-			this.txtKeyID.Text = "0x" + tpkKey.PrimaryKey.KeyID.ToString("x");
-			this.txtTimeCreated.Text = tpkKey.PrimaryKey.TimeCreated.ToString();
-			
-			try {
-				this.txtExpiration.Text = tpkKey.KeyExpirationTime.ToString();
-			} catch (Exception e) {
-				this.txtExpiration.Text = e.Message;
-			}
-			try {
-				this.txtAlgorithm.Text = tpkKey.FindPreferedAlgorithms()[0].ToString();
-			} catch (Exception) {
-				this.txtAlgorithm.Text = "not found";
-			}
 		}
-
+		
 		private void InitializeComponent() {
 			this.label1 = new System.Windows.Forms.Label();
 			this.txtFingerprint = new System.Windows.Forms.TextBox();

@@ -1,4 +1,4 @@
-﻿// created on 17.06.2003 at 20:16
+// created on 17.06.2003 at 20:16
 
 using SharpPrivacy.SharpPrivacyIF;
 using System;

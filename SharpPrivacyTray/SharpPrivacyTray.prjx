@@ -4,40 +4,40 @@
     <File name=".\AssemblyInfo.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\KeyManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\QueryPassphrase.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
-    <File name=".\Working.cs" subtype="Code" buildaction="Nothing" dependson="" data="" />
+    <File name=".\Working.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\SplashScreen.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\EncryptionHelper.cs" subtype="Code" buildaction="Nothing" dependson="" data="" />
     <File name=".\PublicKeySelector.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\PlaintextViewer.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\GenerateKey.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
-    <File name=".\KeyProperties.cs" subtype="Code" buildaction="Nothing" dependson="" data="" />
+    <File name=".\KeyProperties.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\AboutDialog.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
-    <File name=".\SignKey.cs" subtype="Code" buildaction="Nothing" dependson="" data="" />
-    <File name=".\AddUserID.cs" subtype="Code" buildaction="Nothing" dependson="" data="" />
+    <File name=".\SignKey.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name=".\AddUserID.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\SharpPrivacy.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\SharpPrivacyTray.resources" subtype="Code" buildaction="EmbedAsResource" dependson="" data="" />
   </Contents>
   <References>
-    <Reference type="Assembly" refto=".\SynapticEffect.Forms.dll" />
-    <Reference type="Project" refto="MagicLibrary" />
-    <Reference type="Assembly" refto=".\SharpPrivacyIF.dll" />
+    <Reference type="Assembly" refto=".\SynapticEffect.Forms.dll" localcopy="True" />
+    <Reference type="Project" refto="MagicLibrary" localcopy="True" />
+    <Reference type="Assembly" refto=".\SharpPrivacyIF.dll" localcopy="True" />
   </References>
   <DeploymentInformation target="" script="" strategy="File" />
   <Configuration runwithwarnings="False" name="Debug">
     <CodeGeneration runtime="MsNet" compiler="Csc" warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="True" generateoverflowchecks="True" mainclass="SharpPrivacy.SharpPrivacyTray.SharpPrivacyTray" target="WinExe" definesymbols="" generatexmldocumentation="False" win32Icon="..\..\images\trayicon.ico" />
     <Execution commandlineparameters="" consolepause="False" />
-    <Output directory=".\" assembly="SharpPrivacyTray" />
+    <Output directory=".\" assembly="SharpPrivacyTray" executeScript="" executeBeforeBuild="" executeAfterBuild="" />
   </Configuration>
   <Configurations active="Debug">
     <Configuration runwithwarnings="False" name="Debug">
       <CodeGeneration runtime="MsNet" compiler="Csc" warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="True" generateoverflowchecks="True" mainclass="SharpPrivacy.SharpPrivacyTray.SharpPrivacyTray" target="WinExe" definesymbols="" generatexmldocumentation="False" win32Icon="..\..\images\trayicon.ico" />
       <Execution commandlineparameters="" consolepause="False" />
-      <Output directory=".\" assembly="SharpPrivacyTray" />
+      <Output directory=".\" assembly="SharpPrivacyTray" executeScript="" executeBeforeBuild="" executeAfterBuild="" />
     </Configuration>
     <Configuration runwithwarnings="False" name="Release">
       <CodeGeneration runtime="MsNet" compiler="Csc" warninglevel="4" includedebuginformation="False" optimize="True" unsafecodeallowed="True" generateoverflowchecks="True" mainclass="SharpPrivacy.SharpPrivacyMain" target="WinExe" definesymbols="" generatexmldocumentation="False" win32Icon="" />
       <Execution commandlineparameters="" consolepause="False" />
-      <Output directory=".\" assembly="SharpPrivacy" />
+      <Output directory=".\" assembly="SharpPrivacy" executeScript="" executeBeforeBuild="" executeAfterBuild="" />
     </Configuration>
   </Configurations>
 </Project>

@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -24,36 +24,55 @@
 //
 using System;
 using System.Windows.Forms;
+using System.Drawing;
 
 namespace SharpPrivacy.SharpPrivacyTray {
 	public class Working : System.Windows.Forms.Form {
 		private System.Windows.Forms.Label label;
 		private System.Windows.Forms.Button cmdCancel;
-		private System.Windows.Forms.ProgressBar pbProgress;
-		private System.Windows.Forms.PictureBox pbIcon;
+		private System.Drawing.Bitmap bmpWait = new Bitmap("working.gif");
 		
 		public Working() {
 			InitializeComponent();
-			System.Resources.ResourceManager resources = new System.Resources.ResourceManager("SharpPrivacy", System.Reflection.Assembly.GetExecutingAssembly()); 
-			this.pbIcon.Image = ((System.Drawing.Icon)resources.GetObject("iconWorking")).ToBitmap();
+			
+			System.Resources.ResourceManager resources = new System.Resources.ResourceManager("SharpPrivacyTray", System.Reflection.Assembly.GetExecutingAssembly());
+			
 			this.Icon = (System.Drawing.Icon)resources.GetObject("iconWorking");
-			this.pbProgress.Minimum = 0;
-			this.pbProgress.Maximum = 100;
 			Application.DoEvents();
+			bmpWait.MakeTransparent();
+			
+			AnimateImage();
 		}
 		
-		public void Progress(int iProgress) {
-			this.pbProgress.Increment(iProgress);
-			Application.DoEvents();
+		private void AnimateImage() {
+			ImageAnimator.Animate(bmpWait, new EventHandler(this.OnFrameChanged));
 		}
 		
+		private void OnFrameChanged(object o, EventArgs e) {
+			this.Invalidate();
+		}
+		
+		protected override void OnPaint(PaintEventArgs e) {
+			
+			ImageAnimator.UpdateFrames();
+			
+			e.Graphics.DrawImage(this.bmpWait, new Point(20,28));
+			base.OnPaint(e);
+		}
 		
 		private void InitializeComponent() {
-			this.label = new System.Windows.Forms.Label();
 			this.cmdCancel = new System.Windows.Forms.Button();
-			this.pbProgress = new System.Windows.Forms.ProgressBar();
-			this.pbIcon = new System.Windows.Forms.PictureBox();
+			this.label = new System.Windows.Forms.Label();
 			this.SuspendLayout();
+			// 
+			// cmdCancel
+			// 
+			this.cmdCancel.Enabled = false;
+			this.cmdCancel.Location = new System.Drawing.Point(204, 89);
+			this.cmdCancel.Name = "cmdCancel";
+			this.cmdCancel.Size = new System.Drawing.Size(88, 24);
+			this.cmdCancel.TabIndex = 3;
+			this.cmdCancel.Text = "Cancel";
 			// 
 			// label
 			// 
@@ -63,42 +82,17 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			this.label.TabIndex = 1;
 			this.label.Text = "Please allow a second for the action to be taken...";
 			// 
-			// cmdCancel
-			// 
-			this.cmdCancel.Enabled = false;
-			this.cmdCancel.Location = new System.Drawing.Point(196, 72);
-			this.cmdCancel.Name = "cmdCancel";
-			this.cmdCancel.Size = new System.Drawing.Size(88, 24);
-			this.cmdCancel.TabIndex = 3;
-			this.cmdCancel.Text = "Cancel";
-			// 
-			// pbProgress
-			// 
-			this.pbProgress.Location = new System.Drawing.Point(68, 40);
-			this.pbProgress.Name = "pbProgress";
-			this.pbProgress.Size = new System.Drawing.Size(216, 16);
-			this.pbProgress.TabIndex = 0;
-			// 
-			// pbIcon
-			// 
-			this.pbIcon.Location = new System.Drawing.Point(12, 36);
-			this.pbIcon.Name = "pbIcon";
-			this.pbIcon.Size = new System.Drawing.Size(36, 32);
-			this.pbIcon.TabIndex = 2;
-			this.pbIcon.TabStop = false;
-			// 
 			// Working
 			// 
-			this.Text = "Please wait...";
-			this.ClientSize = new System.Drawing.Size(292, 105);
+			this.AutoScaleBaseSize = new System.Drawing.Size(5, 14);
+			this.ClientSize = new System.Drawing.Size(296, 117);
+			this.Controls.Add(this.cmdCancel);
+			this.Controls.Add(this.label);
+			this.Name = "Working";
 			this.ShowInTaskbar = false;
-			this.Controls.AddRange(new System.Windows.Forms.Control[] {
-						this.cmdCancel,
-						this.pbIcon,
-						this.label,
-						this.pbProgress});
-			
-			
+			this.Text = "Please wait...";
+			this.ResumeLayout(false);
 		}
 	}
 }
+

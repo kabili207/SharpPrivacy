@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -70,6 +70,9 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private	MenuCommand mnuCurrentWindowEncyrptSign = new MenuCommand("Encrypt && Sign");
 		private	MenuCommand mnuCurrentWindowSign = new MenuCommand("Sign");
 		private	MenuCommand mnuCurrentWindowEncrypt = new MenuCommand("Encrypt");
+		
+		private System.Threading.Thread tThread;
+		private static Working wWorking;
 		
 		public SharpPrivacyTray() {
 			DateTime dtStart = DateTime.Now;
@@ -346,14 +349,31 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			ulong[] lTargetKeyIDs = (ulong[])pksSelector.SelectedKeys.ToArray(Type.GetType("System.UInt64"));
 			
 			try {
+				startWorking();
 				SharpPrivacy.ReloadKeyRing();
 				string strReturn = SharpPrivacy.Instance.EncryptText(strMessage, lTargetKeyIDs);
 				Clipboard.SetDataObject(strReturn);
+				stopWorking();
 			} catch (Exception ex) {
 				MessageBox.Show("An error occured while encrypting the message: " + ex.Message + "\n\n" + ex.StackTrace, "Error...", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1);
 			}
 		
 			
+		}
+		
+		void startWorking() {
+			tThread = new System.Threading.Thread(new System.Threading.ThreadStart(showWorkingWindow));
+			tThread.Priority = System.Threading.ThreadPriority.AboveNormal;
+			tThread.Start();
+		}
+		
+		static void showWorkingWindow() {
+			wWorking = new Working();
+			wWorking.Show();
+		}
+		
+		void stopWorking() {
+			tThread.Abort();
 		}
 		
 		void mnuClipboardEncryptSign_Click(Object sender, System.EventArgs e) {

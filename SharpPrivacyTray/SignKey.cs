@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -19,6 +19,7 @@
 //	- 25.05.2003: Created this file.
 //	- 01.06.2003: Added this header for the first beta release.
 //  - 14.06.2003: Changed Namespace to SharpPrivacy.SharpPrivacyTray
+//  - 14.10.2003: Changes for new Version (with xml keys)
 //
 // (C) 2003, Daniel Fabian
 //
@@ -27,6 +28,8 @@ using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Reflection;
+using System.Xml;
 
 namespace SharpPrivacy.SharpPrivacyTray {
 	/// <summary>
@@ -51,18 +54,8 @@ namespace SharpPrivacy.SharpPrivacyTray {
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.ComboBox cmbUserID;
 		
-		private TransportablePublicKey tpkKey;
-		private SecretKeyRing skrKeyRing;
+		private XmlElement xmlKey;
 		private bool bSigned = false;
-		
-		public TransportablePublicKey SignedKey {
-			get {
-				if (bSigned)
-					return tpkKey;
-				
-				throw new Exception("The key has not been signed yet!");
-			}
-		}
 		
 		public bool IsCanceled {
 			get {
@@ -70,19 +63,20 @@ namespace SharpPrivacy.SharpPrivacyTray {
 			}
 		}
 
-		public SignKey(TransportablePublicKey tpkKey, SecretKeyRing skrKeyRing) {
+		public SignKey(XmlElement xmlKey) {
 			//
 			// Required for Windows Form Designer support
 			//
 			InitializeComponent();
 			
-			this.tpkKey = tpkKey;
-			this.skrKeyRing = skrKeyRing;
-			IEnumerator ieUserIDs = tpkKey.Certifications.GetEnumerator();
+			this.xmlKey = xmlKey;
+			XmlNodeList xnlUserIDs = xmlKey.GetElementsByTagName("UserID");
+			IEnumerator ieUserIDs = xnlUserIDs.GetEnumerator();
 			while (ieUserIDs.MoveNext()) {
-				cmbUserID.Items.Add(ieUserIDs.Current);
+				XmlElement xmlUserID = (XmlElement)ieUserIDs.Current;
+				cmbUserID.Items.Add(xmlUserID.GetAttribute("name"));
 			}
-			this.txtFingerprint.Text = tpkKey.PrimaryKey.Fingerprint.ToString(16);
+			this.txtFingerprint.Text = xmlKey.GetAttribute("keyid");
 		}
 		
 		/// <summary>
@@ -312,53 +306,33 @@ namespace SharpPrivacy.SharpPrivacyTray {
 				return;
 			}
 			
-			CertifiedUserID cuiID = null;
-			try {
-				cuiID = (CertifiedUserID)this.cmbUserID.SelectedItem;
-			} catch (Exception) {
+			if ((string)cmbUserID.SelectedItem == "") {
 				MessageBox.Show("Please select the user ID you want to sign!", "Error...", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1);
 				return;
 			}
 			
-			SignatureTypes stType = SignatureTypes.UserIDSignature;
+			int nType = 0;
 			if (this.rbCasualVerification.Checked)
-				stType = SignatureTypes.UserIDSignature_CasualVerification;
+				nType = 0x12;
 			if (this.rbNoVerification.Checked)
-				stType = SignatureTypes.UserIDSignature_NoVerification;
+				nType = 0x11;
 			if (this.rbPositivVerification.Checked)
-				stType = SignatureTypes.UserIDSignature_PositivVerification;
+				nType = 0x13;
 			
 			QueryPassphrase qpPassphrase = new QueryPassphrase();
-			qpPassphrase.ShowMyDialog(skrKeyRing);
-			TransportableSecretKey tskKey = qpPassphrase.SelectedKey;
+			qpPassphrase.ShowMultiKeyDialog(SharpPrivacy.SecretKeyRing);
+			string strKeyID = xmlKey.GetAttribute("keyid");
+			ulong lSignedKeyID = UInt64.Parse(strKeyID.Substring(2), System.Globalization.NumberStyles.HexNumber);
+			ulong lSigningKeyID = qpPassphrase.SelectedKey;
 			string strPassphrase = qpPassphrase.Passphrase;
-			SecretKeyPacket skpSignatureKey = tskKey.FindKey(AsymActions.Sign);
 			
-			SignaturePacket spCertificate = new SignaturePacket();
-			spCertificate.SignatureType = stType;
-			spCertificate.Version = SignaturePacketVersionNumbers.v4;
-			spCertificate.HashAlgorithm = HashAlgorithms.SHA1;
-			spCertificate.KeyID = skpSignatureKey.PublicKey.KeyID;
-			spCertificate.TimeCreated = DateTime.Now;
-			
-			if (this.chkExportable.Checked == false) {
-				SignatureSubPacket sspNotExportable = new SignatureSubPacket();
-				sspNotExportable.Type = SignatureSubPacketTypes.ExportableSignature;
-				sspNotExportable.ExportableSignature = false;
-				spCertificate.AddSubPacket(sspNotExportable, true);
+			try {
+				SharpPrivacy.Instance.SignKey(lSignedKeyID, lSigningKeyID, this.cmbUserID.Text, nIntroducerDepth, chkExportable.Checked, nType, strPassphrase);
+			} catch (Exception ex) {
+				MessageBox.Show("Something went wrong signing the key: " + ex.Message, "Error...", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1);
+				return;
 			}
 			
-			if (nIntroducerDepth > 0) {
-				SignatureSubPacket sspTrust = new SignatureSubPacket();
-				sspTrust.Type = SignatureSubPacketTypes.TrustSignature;
-				sspTrust.TrustLevel = (byte)nIntroducerDepth;
-				sspTrust.TrustAmount = 120;
-				spCertificate.AddSubPacket(sspTrust, true);
-			}
-			
-			cuiID.Sign(spCertificate, skpSignatureKey, strPassphrase, this.tpkKey.PrimaryKey);
-			this.tpkKey.Certifications.Remove(cuiID);
-			this.tpkKey.Certifications.Add(cuiID);
 			this.bSigned = true;
 			this.Close();
 		}
