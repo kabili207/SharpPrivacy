@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<Resources Extension=".resx">
-  <Resource Name="wizardControl.Picture" Type="System.Drawing.Bitmap" FileName="" Value="" />
-  <Resource Name="wizardControl.Modifiers" Type="System.CodeDom.MemberAttributes" FileName="" Value="" />
-  <Resource Name="$this.Name" Type="System.String" FileName="" Value="WizardDialog" />
-  <Resource Name="wizardControl.DrawGrid" Type="System.Boolean" FileName="" Value="" />
-</Resources>
