@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is part of the source code distribution of SharpPrivacy.
 // SharpPrivacy is an Open Source OpenPGP implementation and can be 
 // found at http://www.sharpprivacy.net
@@ -163,8 +163,8 @@ namespace SharpPrivacy.SharpPrivacyLib.OpenPGP.Messages {
 			Array.Copy(pkpPrimaryKey.Body, 0, bPrimaryKey, 3, pkpPrimaryKey.Body.Length);
 			
 			byte[] bData = new byte[bPrimaryKey.Length + bSubKey.Length];
-			Array.Copy(bSubKey, 0, bData, 0, bSubKey.Length);
-			Array.Copy(bPrimaryKey, 0, bData, bSubKey.Length, bPrimaryKey.Length);
+			Array.Copy(bPrimaryKey, 0, bData, 0, bPrimaryKey.Length);
+			Array.Copy(bSubKey, 0, bData, bPrimaryKey.Length, bSubKey.Length);
 			
 			SignaturePacket spKeyBindingSig = new SignaturePacket();
 			spKeyBindingSig.Version = SignaturePacketVersionNumbers.v4;
